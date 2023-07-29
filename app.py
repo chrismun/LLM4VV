@@ -1,6 +1,9 @@
 import torch
 from transformers import LlamaForCausalLM, LlamaTokenizer
 import streamlit as st 
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
 
 example_test = '''
 #include "acc_testsuite.h"
@@ -124,7 +127,11 @@ model = LlamaForCausalLM.from_pretrained(
     model_path, torch_dtype=torch.float16, device_map='auto',
 )
 
-def generate_response(feature):
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.get_json(force=True)
+    feature = data['text']
+
     system = 'You are an AI assistant that follows instruction extremely well. Help as much as you can. Only write code and explain it'
     
     prompt = f"### System:\n{system}\n\n### User:\n'Write a code in c following the example and context below to verify that a compiler is implementing the OpenACC {feature} correctly.\n\nContext: \n {context} \n Example Test: {example_test}\n\n### Response:\n"
@@ -152,22 +159,26 @@ def generate_response(feature):
         )    
     output = rest[0][length:]
     string = tokenizer.decode(output, skip_special_tokens=True)
-    return f'[!] Response: {string}'
-
-def main():
-    st.set_page_config(
-        page_title="UD LLMVV", page_icon=":bird:"
-    )
-
-    st.header("UD LLMVV :bird:")
-    feature = st.text_area("enter a feature to test")
-
-    if topic:
-        st.write("Generating test...")
-
-        result = generate_response(feature)
-
-        st.info(result)
+    # return f'[!] Response: {string}'
+    return jsonify({'result': string})
 
 if __name__ == '__main__':
-    main()
+    app.run(host='localhost', port=5000, debug=True)
+
+# def main():
+#     st.set_page_config(
+#         page_title="UD LLMVV", page_icon=":bird:"
+#     )
+
+#     st.header("UD LLMVV :bird:")
+#     feature = st.text_area("enter a feature to test")
+
+#     if topic:
+#         st.write("Generating test...")
+
+#         result = generate_response(feature)
+
+#         st.info(result)
+
+# if __name__ == '__main__':
+#     main()
