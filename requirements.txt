@@ -1,3 +1,7 @@
-torch
+torch 
+torchvision
 streamlit
 transformers
+sentencepiece
+sentence-transformers
+accelerate
