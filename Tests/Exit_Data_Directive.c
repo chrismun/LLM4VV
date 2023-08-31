@@ -5,25 +5,23 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create an array of 100 integers
-    int a[100];
-
-    // Initialize the array with random values
-    for (int i = 0; i < 100; i++){
+    // Create an array of integers
+    int a[10];
+    for (int i = 0; i < 10; i++){
         a[i] = rand();
     }
 
-    // Create a new array of 100 integers
-    int b[100];
-
-    // Copy the values from the first array to the second array
-    #pragma acc parallel async(a, b)
-    for (int i = 0; i < 100; i++){
+    // Create a copy of the array
+    int b[10];
+    for (int i = 0; i < 10; i++){
         b[i] = a[i];
     }
 
-    // Check if the values in the second array are the same as the values in the first array
-    for (int i = 0; i < 100; i++){
+    // Exit data directive
+    #pragma acc exit data copyin(a[0:10])
+
+    // Check that the copy of the array is the same as the original array
+    for (int i = 0; i < 10; i++){
         if (b[i] != a[i]){
             err = 1;
         }

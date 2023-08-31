@@ -5,27 +5,25 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create an array of 100 integers
-    int a[100];
+    // Create an array of 1000 integers
+    int a[1000];
 
     // Initialize the array with random values
-    for (int i = 0; i < 100; i++){
+    for (int i = 0; i < 1000; i++){
         a[i] = rand();
     }
 
-    // Create a new array of 100 integers
-    int b[100];
+    // Create an asynchronous data transfer operation
+    acc_async_data_transfer(a, a, 1000);
 
-    // Copy the values from the first array to the second array
-    #pragma acc parallel async(a, b)
-    for (int i = 0; i < 100; i++){
-        b[i] = a[i];
-    }
+    // Wait for the asynchronous data transfer operation to complete
+    acc_wait(a, a, 1000);
 
-    // Check if the values in the second array are the same as the values in the first array
-    for (int i = 0; i < 100; i++){
-        if (b[i] != a[i]){
+    // Check if the array has been modified
+    for (int i = 0; i < 1000; i++){
+        if (a[i] != i){
             err = 1;
+            break;
         }
     }
 

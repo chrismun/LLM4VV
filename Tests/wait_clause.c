@@ -1,45 +1,52 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#define NUM_TEST_CALLS 100
-#define SEED 1234
-
-int test1() {
+#include "acc_testsuite.h"
+#ifndef T1
+//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+int test1(){
     int err = 0;
     srand(SEED);
 
-    // Generate a random number between 1 and 10
-    int x = rand() % 10 + 1;
-
-    // Use the wait clause to wait for x seconds
-    #pragma acc parallel wait(x)
+    // Create a kernel that waits for a signal
+    #pragma acc parallel num_gangs(1) num_workers(1) if(1)
     {
-        // Do some work
-        printf("Hello from thread %d\n", omp_get_thread_num());
+        #pragma acc loop gang(1) worker(1)
+        for (int i = 0; i < 10; i++) {
+            #pragma acc wait(1)
+        }
     }
 
-    // Check if the wait clause worked correctly
-    if (omp_get_wtime() - x < 0.01) {
-        err = 1;
+    // Create a kernel that sends a signal
+    #pragma acc parallel num_gangs(1) num_workers(1) if(1)
+    {
+        #pragma acc loop gang(1) worker(1)
+        for (int i = 0; i < 10; i++) {
+            #pragma acc signal(1)
+        }
+    }
+
+    // Wait for the signal to be sent
+    #pragma acc parallel num_gangs(1) num_workers(1) if(1)
+    {
+        #pragma acc loop gang(1) worker(1)
+        for (int i = 0; i < 10; i++) {
+            #pragma acc wait(1)
+        }
     }
 
     return err;
 }
+#endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    // Run the test 100 times
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
     }
-
-    // Check if any of the tests failed
-    if (failed != 0) {
+    if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-
+#endif
     return failcode;
 }
