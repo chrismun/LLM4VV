@@ -5,32 +5,35 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create an array of integers on the host
-    int* host_array = (int*)malloc(sizeof(int) * N);
-    for (int i = 0; i < N; i++) {
-        host_array[i] = i;
-    }
-
-    // Create an array of integers on the device
-    int* device_array = (int*)malloc(sizeof(int) * N);
-
-    // Map the host array to the device array
-    #pragma acc map(host_array[0:N])
-
-    // Copy the host array to the device array
-    #pragma acc update device(host_array[0:N])
-
-    // Verify that the device array contains the same values as the host array
-    for (int i = 0; i < N; i++) {
-        if (device_array[i] != host_array[i]) {
-            err = 1;
-            break;
+    // Create a 2D array with random values
+    int arr[N][M];
+    for (int i = 0; i < N; i++){
+        for (int j = 0; j < M; j++){
+            arr[i][j] = rand() % 100;
         }
     }
 
-    // Free the host and device arrays
-    free(host_array);
-    free(device_array);
+    // Map the array to the device
+    acc_map_data(arr, N, M, ACC_MAP_WRITE);
+
+    // Modify the array on the device
+    for (int i = 0; i < N; i++){
+        for (int j = 0; j < M; j++){
+            arr[i][j] = arr[i][j] * 2;
+        }
+    }
+
+    // Unmap the array from the device
+    acc_unmap_data(arr, N, M, ACC_MAP_WRITE);
+
+    // Check if the array has been modified correctly
+    for (int i = 0; i < N; i++){
+        for (int j = 0; j < M; j++){
+            if (arr[i][j] != arr[i][j] * 2){
+                err = 1;
+            }
+        }
+    }
 
     return err;
 }

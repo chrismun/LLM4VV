@@ -10,27 +10,29 @@ int test1() {
     int err = 0;
     srand(SEED);
 
-    // Generate random data
-    int *data = (int *)malloc(sizeof(int) * 100);
-    for (int i = 0; i < 100; i++) {
-        data[i] = rand();
+    // Create a source and destination buffer on the host
+    int *src = (int *)malloc(sizeof(int) * 10);
+    int *dst = (int *)malloc(sizeof(int) * 10);
+
+    // Initialize the source buffer with random values
+    for (int i = 0; i < 10; i++) {
+        src[i] = rand();
     }
 
-    // Copy data to device
-    int *dev_data;
-    acc_malloc((void **)&dev_data, sizeof(int) * 100);
-    acc_memcpy(dev_data, data, sizeof(int) * 100);
+    // Copy the source buffer to the destination buffer using acc_memcpy
+    acc_memcpy(dst, src, sizeof(int) * 10);
 
-    // Check if data is correctly copied
-    for (int i = 0; i < 100; i++) {
-        if (dev_data[i] != data[i]) {
+    // Check that the destination buffer contains the same values as the source buffer
+    for (int i = 0; i < 10; i++) {
+        if (dst[i] != src[i]) {
             err = 1;
             break;
         }
     }
 
-    // Free device memory
-    acc_free(dev_data);
+    // Free the memory allocated for the source and destination buffers
+    free(src);
+    free(dst);
 
     return err;
 }

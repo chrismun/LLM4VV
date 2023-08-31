@@ -10,19 +10,17 @@ int test1() {
     int err = 0;
     srand(SEED);
 
-    // Create a host array
+    // Create a host array and fill it with random data
     int *host_array = (int *)malloc(sizeof(int) * 100);
     for (int i = 0; i < 100; i++) {
-        host_array[i] = i;
+        host_array[i] = rand();
     }
 
-    // Create a device array
+    // Create a device array and copy the host array to it
     int *device_array = (int *)malloc(sizeof(int) * 100);
-
-    // Copy the host array to the device
     acc_memcpy(device_array, host_array, sizeof(int) * 100);
 
-    // Check if the device array contains the same values as the host array
+    // Check that the device array contains the same data as the host array
     for (int i = 0; i < 100; i++) {
         if (device_array[i] != host_array[i]) {
             err = 1;

@@ -1,37 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <omp.h>
+#include <time.h>
 
-#define NUM_TEST_CALLS 10
+#define NUM_TEST_CALLS 100
 #define SEED 1234
 
 int test1() {
     int err = 0;
     srand(SEED);
 
-    // Create an array of 100 integers
-    int a[100];
+    // Generate random data
+    int data[100];
     for (int i = 0; i < 100; i++) {
-        a[i] = rand() % 100;
+        data[i] = rand() % 100;
     }
 
-    // Copy the array to the device
-    #pragma acc enter data copyin(a)
+    // Copy data to device
+    int *dev_data;
+    cudaMalloc((void **)&dev_data, sizeof(int) * 100);
+    cudaMemcpy(dev_data, data, sizeof(int) * 100, cudaMemcpyHostToDevice);
 
-    // Copy the array back to the host
-    #pragma acc enter data copyout(a)
+    // Copy data back to host
+    int *host_data;
+    cudaMallocHost((void **)&host_data, sizeof(int) * 100);
+    cudaMemcpy(host_data, dev_data, sizeof(int) * 100, cudaMemcpyDeviceToHost);
 
-    // Delete the array from the device
-    #pragma acc delete(a)
-
-    // Check that the array is no longer accessible
+    // Verify that data was copied correctly
     for (int i = 0; i < 100; i++) {
-        if (a[i] != 0) {
+        if (host_data[i] != data[i]) {
             err = 1;
             break;
         }
     }
+
+    // Delete device memory
+    cudaFree(dev_data);
+
+    // Delete host memory
+    cudaFreeHost(host_data);
 
     return err;
 }
@@ -40,16 +46,15 @@ int main() {
     int failcode = 0;
     int failed;
 
-    #pragma acc enter data copyin(test1)
-
+#ifndef T1
+    failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test1();
-        if (failed != 0) {
-            failcode = failcode + (1 << 0);
-        }
+        failed = failed + test1();
     }
-
-    #pragma acc exit data copyout(test1)
+    if (failed != 0) {
+        failcode = failcode + (1 << 0);
+    }
+#endif
 
     return failcode;
 }

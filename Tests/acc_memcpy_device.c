@@ -5,33 +5,33 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create two arrays of the same size
-    int *a = (int *)malloc(sizeof(int) * N);
-    int *b = (int *)malloc(sizeof(int) * N);
+    // Allocate memory for the source and destination arrays
+    int *src = (int *)malloc(sizeof(int) * N);
+    int *dst = (int *)malloc(sizeof(int) * N);
 
-    // Initialize the arrays with random values
-    for (int i = 0; i < N; i++){
-        a[i] = rand();
-        b[i] = rand();
+    // Initialize the source and destination arrays
+    for (int i = 0; i < N; i++) {
+        src[i] = i;
+        dst[i] = 0;
     }
 
-    // Copy the values from a to b using the acc_memcpy device
+    // Copy the source array to the destination array using the acc_memcpy device
     #pragma acc parallel loop device_type(acc_memcpy)
-    for (int i = 0; i < N; i++){
-        b[i] = a[i];
+    for (int i = 0; i < N; i++) {
+        dst[i] = src[i];
     }
 
-    // Check that the values in b are the same as the values in a
-    for (int i = 0; i < N; i++){
-        if (b[i] != a[i]){
+    // Check if the destination array is equal to the source array
+    for (int i = 0; i < N; i++) {
+        if (dst[i] != src[i]) {
             err = 1;
             break;
         }
     }
 
-    // Free the memory allocated for the arrays
-    free(a);
-    free(b);
+    // Free the memory for the source and destination arrays
+    free(src);
+    free(dst);
 
     return err;
 }
