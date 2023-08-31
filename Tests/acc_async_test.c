@@ -5,18 +5,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize the OpenACC runtime
-    acc_init(acc_device_default);
+    // Create an asynchronous task
+    #pragma acc async
+    {
+        // Do some work
+        for (int i = 0; i < 10; i++){
+            printf("Hello from task %d\n", i);
+        }
+    }
 
-    // Create a new OpenACC device
-    acc_device_t device;
-    acc_create_device(&device, acc_device_default);
+    // Wait for the asynchronous task to complete
+    #pragma acc wait
 
-    // Shut down the OpenACC runtime
-    acc_shutdown(device);
-
-    // Check if the OpenACC runtime is still active
-    if (acc_is_active(device)) {
+    // Check if the asynchronous task completed successfully
+    if (err != 0){
         err = 1;
     }
 

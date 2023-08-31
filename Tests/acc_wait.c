@@ -1,43 +1,46 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-#ifndef T1
-// T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+#define NUM_TEST_CALLS 100
+#define SEED 1234
+
 int test1() {
     int err = 0;
     srand(SEED);
 
-    // Create a data region that will be used by the wait directive
-    int data[10];
-    for (int i = 0; i < 10; i++) {
-        data[i] = i;
-    }
+    // Generate a random number of threads
+    int num_threads = rand() % 10 + 1;
 
-    // Create a kernel that will wait for the data region to be updated
-    #pragma acc parallel num_gangs(1) num_workers(1) vector_length(10)
-    {
-        #pragma acc loop gang(1) worker(1) vector(10)
-        for (int i = 0; i < 10; i++) {
-            data[i] = data[i] + 1;
-        }
-    }
+    // Create a barrier with the number of threads
+    acc_barrier_t barrier;
+    acc_barrier_init(&barrier, num_threads);
 
-    // Use the wait directive to wait for the data region to be updated
-    #pragma acc wait(data)
+    // Create a thread that waits on the barrier
+    pthread_t thread;
+    pthread_create(&thread, NULL, wait_on_barrier, &barrier);
 
-    // Check that the data region has been updated
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != i + 1) {
-            err = 1;
-        }
+    // Wait for the thread to finish
+    pthread_join(thread, NULL);
+
+    // Check if the barrier was correctly waited on
+    if (barrier.num_waiting != num_threads) {
+        err = 1;
     }
 
     return err;
 }
-#endif
+
+void *wait_on_barrier(void *arg) {
+    acc_barrier_t *barrier = (acc_barrier_t *)arg;
+    acc_barrier_wait(barrier);
+    return NULL;
+}
 
 int main() {
     int failcode = 0;
     int failed;
+
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
@@ -47,5 +50,6 @@ int main() {
         failcode = failcode + (1 << 0);
     }
 #endif
+
     return failcode;
 }

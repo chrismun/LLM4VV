@@ -3,26 +3,32 @@
 #include <time.h>
 
 #define NUM_TEST_CALLS 100
-#define SEED 1234
+#define SEED 12345
 
 int test1() {
     int err = 0;
     srand(SEED);
 
-    // Generate random data
-    int data[10];
-    for (int i = 0; i < 10; i++) {
-        data[i] = rand() % 100;
+    // Generate a random number between 1 and 10
+    int x = rand() % 10 + 1;
+
+    // Create a buffer to store the result of the async operation
+    int result = 0;
+
+    // Launch an async operation that will take x seconds to complete
+    #pragma acc parallel async(x)
+    {
+        // Simulate a long-running operation
+        for (int i = 0; i < 1000000; i++) {
+            result = i;
+        }
     }
 
-    // Create an asynchronous task
-    int async_task = 1;
+    // Wait for the async operation to complete
+    #pragma acc wait(x)
 
-    // Wait for the asynchronous task to complete
-    acc_wait_async(async_task);
-
-    // Check if the asynchronous task completed successfully
-    if (async_task != 0) {
+    // Check if the result is correct
+    if (result != x) {
         err = 1;
     }
 
@@ -33,15 +39,13 @@ int main() {
     int failcode = 0;
     int failed;
 
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test1();
+    // Run the test multiple times to ensure that the compiler is consistent
+    for (int i = 0; i < NUM_TEST_CALLS; i++) {
+        failed = test1();
+        if (failed != 0) {
+            failcode = failcode + (1 << 0);
+        }
     }
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
-    }
-#endif
 
     return failcode;
 }
