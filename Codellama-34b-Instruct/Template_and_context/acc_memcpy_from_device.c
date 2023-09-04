@@ -1,52 +1,45 @@
-#include "acc_testsuite.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <acc_runtime.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
+int acc_memcpy_from_device(void *data_host_dest, void *data_dev_src, size_t bytes) {
     int err = 0;
-    srand(SEED);
 
-    // Initialize data on host
-    int* data_host = (int*)malloc(sizeof(int) * 10);
-    for (int i = 0; i < 10; i++) {
-        data_host[i] = i;
+    if (bytes == 0) {
+        return 0;
     }
 
-    // Allocate device memory
-    int* data_dev = (int*)acc_malloc(sizeof(int) * 10);
+    if (data_host_dest == NULL || data_dev_src == NULL) {
+        err = acc_error_invalid_null_pointer;
+        goto error;
+    }
 
-    // Copy data from host to device
-    acc_memcpy_to_device(data_dev, data_host, sizeof(int) * 10);
-
-    // Copy data from device to host
-    acc_memcpy_from_device(data_host, data_dev, sizeof(int) * 10);
-
-    // Check that data was copied correctly
-    for (int i = 0; i < 10; i++) {
-        if (data_host[i] != i) {
-            err = 1;
-            break;
+    if (acc_deviceptr_is_shared(data_dev_src) && acc_hostptr_is_shared(data_host_dest)) {
+        if (acc_deviceptr_is_same(data_dev_src, data_host_dest)) {
+            return 0;
+        }
+        if (acc_deviceptr_overlap(data_dev_src, data_host_dest, bytes)) {
+            err = acc_error_invalid_async;
+            goto error;
         }
     }
 
-    // Free device memory
-    acc_free(data_dev);
-
-    return err;
-}
-#endif
-
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+    if (!acc_deviceptr_is_accessible(data_dev_src)) {
+        err = acc_error_invalid_async;
+        goto error;
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+
+    if (!acc_hostptr_is_accessible(data_host_dest)) {
+        err = acc_error_invalid_async;
+        goto error;
     }
-#endif
-    return failcode;
+
+    memcpy(data_host_dest, data_dev_src, bytes);
+
+    return 0;
+
+error:
+    acc_error_handler(err);
+    return 1;
 }

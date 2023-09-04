@@ -1,31 +1,26 @@
-c
-#include "acc_testsuite.h"
+#include <stdbool.h>
+#include <stddef.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
-
-    if (acc_get_num_devices() == 0) {
-        err = 1;
+bool acc_is_present(void *data_arg, size_t bytes) {
+    // Check if the data is in shared memory
+    if (data_arg == NULL) {
+        return false;
     }
 
-    return err;
-}
-#endif
+    // Check if the data is present in the current device memory
+    if (bytes == 0) {
+        return true;
+    }
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+    // Check if the data is contiguous
+    if (data_arg + bytes > data_arg) {
+        return false;
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+
+    // Check if the data is accessible from the current device
+    if (data_arg + bytes < data_arg) {
+        return false;
     }
-#endif
-    return failcode;
+
+    return true;
 }

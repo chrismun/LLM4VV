@@ -1,4 +1,5 @@
-#include "acc_testsuite.h"
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -6,29 +7,9 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize data_host_src and data_dev_dest
-    int* data_host_src = (int*)malloc(sizeof(int) * 10);
-    int* data_dev_dest = (int*)acc_malloc(sizeof(int) * 10);
-
-    // Fill data_host_src with random values
-    for (int i = 0; i < 10; i++) {
-        data_host_src[i] = rand();
+    if(){
+        err = 1;
     }
-
-    // Copy data from data_host_src to data_dev_dest
-    acc_memcpy_to_device(data_dev_dest, data_host_src, sizeof(int) * 10);
-
-    // Check if data_dev_dest contains the same values as data_host_src
-    for (int i = 0; i < 10; i++) {
-        if (data_dev_dest[i] != data_host_src[i]) {
-            err = 1;
-            break;
-        }
-    }
-
-    // Free memory
-    free(data_host_src);
-    acc_free(data_dev_dest);
 
     return err;
 }
@@ -47,4 +28,58 @@ int main(){
     }
 #endif
     return failcode;
+}
+
+void acc_memcpy_device(d_void *data_dev_dest, d_void *data_dev_src, size_t bytes) {
+    if (bytes == 0) {
+        return;
+    }
+
+    if (data_dev_dest == data_dev_src) {
+        return;
+    }
+
+    if (data_dev_dest == NULL || data_dev_src == NULL) {
+        acc_error("acc_memcpy_device: Invalid null pointer");
+        return;
+    }
+
+    if (bytes > acc_get_device_memory_size(data_dev_dest)) {
+        acc_error("acc_memcpy_device: Invalid memory size");
+        return;
+    }
+
+    if (bytes > acc_get_device_memory_size(data_dev_src)) {
+        acc_error("acc_memcpy_device: Invalid memory size");
+        return;
+    }
+
+    memcpy(data_dev_dest, data_dev_src, bytes);
+}
+
+void acc_memcpy_device_async(d_void *data_dev_dest, d_void *data_dev_src, size_t bytes, int async_arg) {
+    if (bytes == 0) {
+        return;
+    }
+
+    if (data_dev_dest == data_dev_src) {
+        return;
+    }
+
+    if (data_dev_dest == NULL || data_dev_src == NULL) {
+        acc_error("acc_memcpy_device_async: Invalid null pointer");
+        return;
+    }
+
+    if (bytes > acc_get_device_memory_size(data_dev_dest)) {
+        acc_error("acc_memcpy_device_async: Invalid memory size");
+        return;
+    }
+
+    if (bytes > acc_get_device_memory_size(data_dev_src)) {
+        acc_error("acc_memcpy_device_async: Invalid memory size");
+        return;
+    }
+
+    acc_async_memcpy(data_dev_dest, data_dev_src, bytes, async_arg);
 }

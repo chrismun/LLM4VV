@@ -1,47 +1,22 @@
-c
-#include "acc_testsuite.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
-
-    // Create a data region with a free clause
-    #pragma acc data copy(a[0:n]) free(a)
-    {
-        // Allocate memory for the data region
-        a = (int*)malloc(n*sizeof(int));
-
-        // Initialize the data region
-        for (int i = 0; i < n; i++) {
-            a[i] = i;
-        }
-
-        // Free the data region
-        free(a);
+void acc_free(void *data_dev) {
+    if (data_dev == NULL) {
+        return;
     }
 
-    // Check if the data region was freed correctly
-    if (a != NULL) {
-        err = 1;
-    }
-
-    return err;
+    free(data_dev);
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+int main() {
+    void *data_dev = acc_malloc(100);
+    if (data_dev == NULL) {
+        printf("Error: failed to allocate memory\n");
+        return 1;
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+
+    acc_free(data_dev);
+
+    return 0;
 }

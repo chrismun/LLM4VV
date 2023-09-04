@@ -1,4 +1,3 @@
-c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,11 +9,7 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int async_arg = rand() % 2;
-    acc_set_default_async(async_arg);
-    int default_async = acc_get_default_async();
-
-    if (default_async != async_arg) {
+    if (acc_get_default_async() != acc_async_noval){
         err = 1;
     }
 

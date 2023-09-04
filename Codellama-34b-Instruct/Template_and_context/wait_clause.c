@@ -1,49 +1,44 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <acc_testsuite.h>
+#include "acc_testsuite.h"
 
-#define NUM_TEST_CALLS 100
-#define SEED 12345
-
-int test1() {
+#ifndef T1
+//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+int test1(){
     int err = 0;
     srand(SEED);
 
     // Create a device and activity queues
-    int device = acc_create_device(acc_device_default);
-    int queue = acc_create_queue(device);
+    acc_device_t device = acc_get_device(acc_device_default);
+    acc_async_t async = acc_async_create(device, acc_async_default);
 
-    // Enqueue a wait operation on the queue
-    acc_wait(queue, acc_async_sync);
+    // Enqueue a kernel on the device
+    acc_kernel_t kernel = acc_kernel_create(device, acc_kernel_default);
+    acc_kernel_set_arg(kernel, 0, sizeof(int), &err);
+    acc_kernel_set_arg(kernel, 1, sizeof(int), &async);
+    acc_kernel_launch(kernel, 1, 1, 1);
 
-    // Check if the wait operation has completed
-    if (acc_get_queue_status(queue) == acc_queue_status_complete) {
-        printf("Wait operation completed successfully\n");
-    } else {
-        printf("Wait operation did not complete\n");
-        err = 1;
+    // Wait for the kernel to complete
+    acc_wait(async);
+
+    // Check the result
+    if (err != 0) {
+        return 1;
     }
 
-    // Clean up
-    acc_destroy_queue(queue);
-    acc_destroy_device(device);
-
-    return err;
+    return 0;
 }
+#endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    // Run the test multiple times
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test1();
-        if (failed != 0) {
-            failcode = failcode + (1 << 0);
-        }
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
     return failcode;
 }

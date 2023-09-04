@@ -6,22 +6,19 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Allocate memory on the device
-    void *data_dev = acc_malloc(sizeof(int) * 10);
+    // Allocate some memory on the device
+    void *data_dev = acc_malloc(1024);
 
-    // Map the device memory to the host memory
-    int *data_arg = acc_map_data(data_dev, sizeof(int) * 10);
+    // Map the device memory to a host address
+    void *data_arg = acc_map_data(data_dev, 1024);
 
-    // Verify that the data is mapped correctly
-    for (int i = 0; i < 10; i++) {
-        if (data_arg[i] != data_dev[i]) {
-            err = 1;
-            break;
-        }
+    // Check that the data is mapped correctly
+    if (data_arg != data_dev) {
+        err = 1;
     }
 
-    // Unmap the device memory
-    acc_unmap_data(data_dev);
+    // Unmap the data
+    acc_unmap_data(data_arg);
 
     return err;
 }
