@@ -6,22 +6,26 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a device memory region
-    int *dev_mem = acc_malloc(sizeof(int) * 10);
-
-    // Copy data from host to device
-    acc_memcpy(dev_mem, &host_data, sizeof(int) * 10);
-
-    // Verify that the data was copied correctly
+    // Create a random array of integers
+    int* arr = (int*)malloc(sizeof(int) * 10);
     for (int i = 0; i < 10; i++) {
-        if (dev_mem[i] != host_data[i]) {
+        arr[i] = rand();
+    }
+
+    // Copy the array to the device
+    int* dev_arr = (int*)acc_malloc(sizeof(int) * 10);
+    acc_memcpy(dev_arr, arr, sizeof(int) * 10);
+
+    // Check that the device array contains the same values as the host array
+    for (int i = 0; i < 10; i++) {
+        if (dev_arr[i] != arr[i]) {
             err = 1;
             break;
         }
     }
 
-    // Free the device memory region
-    acc_free(dev_mem);
+    // Free the device array
+    acc_free(dev_arr);
 
     return err;
 }

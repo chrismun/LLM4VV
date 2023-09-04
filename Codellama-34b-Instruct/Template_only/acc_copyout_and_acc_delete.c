@@ -1,4 +1,9 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <acc_testsuite.h>
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -6,36 +11,41 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a data array
-    int data[100];
-    for (int i = 0; i < 100; i++) {
-        data[i] = i;
+    // Create a random array of integers
+    int *arr = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        arr[i] = rand();
     }
 
-    // Copy the data array to the device
-    acc_copyin(data, 100);
+    // Create a copy of the array on the device
+    int *dev_arr = (int *)acc_copyin(arr, sizeof(int) * 10);
 
-    // Create a copy of the data array on the device
-    int *device_data = acc_copyout(data, 100);
-
-    // Modify the data array on the device
-    for (int i = 0; i < 100; i++) {
-        device_data[i] = i * 2;
+    // Modify the array on the device
+    for (int i = 0; i < 10; i++) {
+        dev_arr[i] = dev_arr[i] + 1;
     }
 
-    // Copy the modified data array back to the host
-    acc_copyin(device_data, 100);
+    // Copy the modified array back to the host
+    acc_copyout(dev_arr, arr, sizeof(int) * 10);
 
-    // Check that the data array on the host has been modified
-    for (int i = 0; i < 100; i++) {
-        if (data[i] != i * 2) {
+    // Check that the array on the host has been modified
+    for (int i = 0; i < 10; i++) {
+        if (arr[i] != dev_arr[i]) {
             err = 1;
             break;
         }
     }
 
-    // Delete the data array on the device
-    acc_delete(device_data);
+    // Delete the device array
+    acc_delete(dev_arr);
+
+    // Check that the device array has been deleted
+    if (acc_is_present(dev_arr)) {
+        err = 1;
+    }
+
+    // Free the host array
+    free(arr);
 
     return err;
 }

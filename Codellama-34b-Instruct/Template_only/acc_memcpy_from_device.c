@@ -6,28 +6,34 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a device memory region
-    acc_device_t device = acc_get_device();
-    acc_device_memory_t device_memory = acc_malloc(device, sizeof(int) * 10);
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
-    // Copy data from host to device
-    int *host_data = (int *)malloc(sizeof(int) * 10);
+    // Initialize the data
     for (int i = 0; i < 10; i++) {
-        host_data[i] = i;
+        a[i] = i;
+        b[i] = i;
     }
-    acc_memcpy(device_memory, host_data, sizeof(int) * 10, acc_memcpy_host_to_device);
+
+    // Copy the data from device to host
+    #pragma acc enter data copyin(a[0:10])
+    #pragma acc enter data copyin(b[0:10])
+
+    // Copy the data from host to device
+    #pragma acc enter data copyout(a[0:10])
+    #pragma acc enter data copyout(b[0:10])
 
     // Verify that the data was copied correctly
-    int *device_data = (int *)acc_device_memory_get_pointer(device_memory);
     for (int i = 0; i < 10; i++) {
-        if (device_data[i] != host_data[i]) {
+        if (a[i] != b[i]) {
             err = 1;
             break;
         }
     }
 
-    // Free the device memory region
-    acc_free(device_memory);
+    // Free the memory
+    free(a);
+    free(b);
 
     return err;
 }

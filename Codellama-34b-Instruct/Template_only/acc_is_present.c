@@ -6,28 +6,13 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Check if the OpenACC runtime is present
-    if (!acc_runtime_present()){
+    // Check if the acc feature is present
+    if (!acc_is_present()) {
         err = 1;
     }
 
-    // Check if the OpenACC data construct is present
-    if (!acc_data_present()){
-        err = 1;
-    }
-
-    // Check if the OpenACC executable-data construct is present
-    if (!acc_executable_data_present()){
-        err = 1;
-    }
-
-    // Check if the OpenACC construct-independent construct is present
-    if (!acc_construct_independent_present()){
-        err = 1;
-    }
-
-    // Check if the OpenACC version is supported
-    if (!acc_version_supported(2.0, 2.7)){
+    // Check if the acc feature is working properly
+    if (acc_is_working_properly()) {
         err = 1;
     }
 

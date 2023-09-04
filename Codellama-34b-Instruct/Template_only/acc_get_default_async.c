@@ -6,43 +6,19 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Set the default async mode to true
-    acc_set_default_async(true);
+    // Set the default async value to 1
+    acc_set_default_async(1);
 
-    // Create a data region with a random size
-    int size = rand() % 1000;
-    int* data = (int*)malloc(size * sizeof(int));
+    // Create a data region with the default async value
+    acc_data_region_t data_region = acc_create_data_region(acc_get_default_async());
 
-    // Initialize the data region with random values
-    for (int i = 0; i < size; i++) {
-        data[i] = rand();
+    // Verify that the default async value is set correctly
+    if (data_region->async != 1) {
+        err = 1;
     }
 
-    // Create a copy of the data region
-    int* data_copy = (int*)malloc(size * sizeof(int));
-    memcpy(data_copy, data, size * sizeof(int));
-
-    // Set the default async mode to false
-    acc_set_default_async(false);
-
-    // Create a new data region with the same size as the original data region
-    int* new_data = (int*)malloc(size * sizeof(int));
-
-    // Copy the data from the original data region to the new data region
-    memcpy(new_data, data, size * sizeof(int));
-
-    // Check if the data in the new data region is the same as the original data region
-    for (int i = 0; i < size; i++) {
-        if (new_data[i] != data_copy[i]) {
-            err = 1;
-            break;
-        }
-    }
-
-    // Free the memory allocated for the data regions
-    free(data);
-    free(data_copy);
-    free(new_data);
+    // Clean up the data region
+    acc_destroy_data_region(data_region);
 
     return err;
 }

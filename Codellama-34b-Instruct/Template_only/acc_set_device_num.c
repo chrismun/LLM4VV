@@ -6,11 +6,18 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int device_num = rand() % 10; // generate a random device number
-    acc_set_device_num(device_num); // set the device number
+    // Set the device number to a random value
+    int device_num = rand() % 10;
 
-    if (acc_get_device_num() != device_num) {
-        err = 1; // if the device number is not set correctly, return an error
+    // Create a new device context
+    acc_device_t device = acc_get_device(device_num);
+
+    // Set the device number for the current device
+    acc_set_device_num(device, device_num);
+
+    // Check that the device number was set correctly
+    if (acc_get_device_num(device) != device_num) {
+        err = 1;
     }
 
     return err;

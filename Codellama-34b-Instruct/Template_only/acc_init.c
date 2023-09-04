@@ -1,4 +1,3 @@
-c
 #include "acc_testsuite.h"
 
 #ifndef T1
@@ -7,29 +6,26 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)acc_malloc(sizeof(int));
-    int *b = (int *)acc_malloc(sizeof(int));
+    // Initialize the OpenACC runtime
+    acc_init();
 
-    // Initialize the data
-    *a = 1;
-    *b = 2;
+    // Create a new OpenACC device
+    acc_device_t device = acc_create_device(ACC_DEVICE_TYPE_GPU);
 
-    // Create an OpenACC region
-    #pragma acc region
-    {
-        // Initialize the data in the region
-        *a = 3;
-        *b = 4;
-    }
+    // Set the device as the current device
+    acc_set_device(device);
 
-    // Check the data outside the region
-    if (*a != 3 || *b != 4) {
-        err = 1;
-    }
+    // Allocate memory on the device
+    acc_malloc(1024);
 
-    // Free the memory
-    acc_free(a);
-    acc_free(b);
+    // Initialize the memory on the device
+    acc_init_memory(device, 1024);
+
+    // Free the memory on the device
+    acc_free(device);
+
+    // Destroy the device
+    acc_destroy_device(device);
 
     return err;
 }

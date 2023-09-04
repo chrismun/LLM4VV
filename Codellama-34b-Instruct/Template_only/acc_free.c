@@ -6,19 +6,28 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Allocate some memory on the device
-    int *dev_ptr = (int *)acc_malloc(sizeof(int));
+    // Create a random array of integers
+    int* arr = (int*)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        arr[i] = rand() % 100;
+    }
 
-    // Set the value of the memory on the device
-    *dev_ptr = 1234;
+    // Create a device array to store the data
+    int* d_arr = (int*)acc_malloc(sizeof(int) * 10);
 
-    // Free the memory on the device
-    acc_free(dev_ptr);
+    // Copy the data to the device
+    acc_memcpy(d_arr, arr, sizeof(int) * 10);
 
-    // Check that the memory has been freed
-    if (*dev_ptr != 0){
+    // Free the device array
+    acc_free(d_arr);
+
+    // Check that the data has been freed
+    if (acc_is_present(d_arr)) {
         err = 1;
     }
+
+    // Free the host array
+    free(arr);
 
     return err;
 }

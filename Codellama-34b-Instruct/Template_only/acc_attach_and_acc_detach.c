@@ -6,22 +6,32 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a device array
-    int *device_array = (int *)acc_malloc(sizeof(int) * 10);
+    // Create a new device
+    acc_device_t device;
+    acc_device_create(&device, acc_device_default);
 
-    // Attach the device array to the host
-    acc_attach(device_array, 10);
+    // Create a new context
+    acc_context_t context;
+    acc_context_create(&context, device);
 
-    // Detach the device array from the host
-    acc_detach(device_array);
+    // Create a new queue
+    acc_queue_t queue;
+    acc_queue_create(&queue, context);
 
-    // Check that the device array is no longer attached to the host
-    if (acc_is_attached(device_array)) {
-        err = 1;
-    }
+    // Attach the queue to the device
+    acc_attach_queue(queue, device);
 
-    // Free the device array
-    acc_free(device_array);
+    // Detach the queue from the device
+    acc_detach_queue(queue, device);
+
+    // Destroy the queue
+    acc_queue_destroy(queue);
+
+    // Destroy the context
+    acc_context_destroy(context);
+
+    // Destroy the device
+    acc_device_destroy(device);
 
     return err;
 }

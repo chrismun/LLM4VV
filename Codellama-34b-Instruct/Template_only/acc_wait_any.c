@@ -6,36 +6,34 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a new OpenACC device
-    acc_device_t device;
-    acc_device_create(&device, acc_device_default);
+    // Create a device array
+    int *dev_array;
+    acc_malloc(&dev_array, sizeof(int) * 10);
 
-    // Create a new OpenACC context
-    acc_context_t context;
-    acc_context_create(&context, device);
+    // Create a host array
+    int *host_array = (int *)malloc(sizeof(int) * 10);
 
-    // Create a new OpenACC queue
-    acc_queue_t queue;
-    acc_queue_create(&queue, context);
+    // Initialize the host array
+    for (int i = 0; i < 10; i++) {
+        host_array[i] = i;
+    }
 
-    // Create a new OpenACC event
-    acc_event_t event;
-    acc_event_create(&event, queue);
+    // Copy the host array to the device array
+    acc_memcpy(dev_array, host_array, sizeof(int) * 10);
 
-    // Wait for any event to complete
-    acc_wait_any(event);
+    // Create a wait directive
+    acc_wait_any(dev_array, 10);
 
-    // Check if the event has completed
-    if (acc_event_test(event) == 0) {
-        // The event has completed, so we can proceed with the next step
+    // Check if the wait directive has completed
+    if (acc_wait_any(dev_array, 10) != 0) {
         err = 1;
     }
 
-    // Clean up the OpenACC resources
-    acc_event_destroy(event);
-    acc_queue_destroy(queue);
-    acc_context_destroy(context);
-    acc_device_destroy(device);
+    // Free the device array
+    acc_free(dev_array);
+
+    // Free the host array
+    free(host_array);
 
     return err;
 }

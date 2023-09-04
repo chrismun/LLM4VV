@@ -6,33 +6,18 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a data array
-    int data[10];
-
-    // Initialize the data array
-    for (int i = 0; i < 10; i++) {
-        data[i] = i;
-    }
-
-    // Create a copy of the data array
-    int data_copy[10];
-    memcpy(data_copy, data, sizeof(data));
-
-    // Create an OpenACC region with the async clause
-    #pragma acc parallel async(data_copy)
+    #pragma acc parallel async(1)
     {
-        // Perform some computation on the data array
-        for (int i = 0; i < 10; i++) {
-            data[i] = data[i] + 1;
+        int i = 0;
+        #pragma acc loop
+        for (i = 0; i < 10; i++) {
+            #pragma acc atomic update
+            i++;
         }
     }
 
-    // Check that the data array has been updated correctly
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != data_copy[i] + 1) {
-            err = 1;
-            break;
-        }
+    if (i != 10) {
+        err = 1;
     }
 
     return err;

@@ -6,41 +6,29 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a device array
-    int *device_array = (int *)acc_malloc(sizeof(int) * 10);
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
-    // Create a host array
-    int *host_array = (int *)malloc(sizeof(int) * 10);
+    #pragma acc data copy(a[0:10], b[0:10])
+    {
+        #pragma acc update device(a[0:10])
+        #pragma acc update self(b[0:10])
 
-    // Initialize the host array
-    for (int i = 0; i < 10; i++) {
-        host_array[i] = i;
+        for (int i = 0; i < 10; i++) {
+            a[i] = i;
+            b[i] = i;
+        }
     }
 
-    // Copy the host array to the device array
-    acc_update_device(device_array, host_array, 10);
-
-    // Update the device array
     for (int i = 0; i < 10; i++) {
-        device_array[i] = i * 2;
-    }
-
-    // Copy the device array back to the host array
-    acc_update_self(host_array, device_array, 10);
-
-    // Check that the host array has been updated correctly
-    for (int i = 0; i < 10; i++) {
-        if (host_array[i] != i * 2) {
+        if (a[i] != i || b[i] != i) {
             err = 1;
             break;
         }
     }
 
-    // Free the device array
-    acc_free(device_array);
-
-    // Free the host array
-    free(host_array);
+    free(a);
+    free(b);
 
     return err;
 }

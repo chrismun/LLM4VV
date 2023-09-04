@@ -1,4 +1,3 @@
-c
 #include "acc_testsuite.h"
 
 #ifndef T1
@@ -8,26 +7,27 @@ int test1(){
     srand(SEED);
 
     // Create a device array
-    int *dev_array;
-    acc_malloc(&dev_array, sizeof(int) * 10);
+    int *dev_array = (int *)acc_malloc(sizeof(int) * 10);
 
-    // Initialize the device array with random values
+    // Set the device array to a random value
     for (int i = 0; i < 10; i++) {
         dev_array[i] = rand();
     }
 
-    // Get the device property of the array
-    acc_device_t device = acc_get_property(dev_array, ACC_PROPERTY_DEVICE);
+    // Get the device array's properties
+    acc_get_property(dev_array, ACC_PROPERTY_DEVICE_TYPE, &err);
+    acc_get_property(dev_array, ACC_PROPERTY_DEVICE_ID, &err);
+    acc_get_property(dev_array, ACC_PROPERTY_DEVICE_NAME, &err);
 
-    // Check if the device property is set correctly
-    if (device != ACC_DEVICE_HOST) {
-        err = 1;
+    // Check that the properties are correct
+    if (err != 0) {
+        return 1;
     }
 
     // Free the device array
     acc_free(dev_array);
 
-    return err;
+    return 0;
 }
 #endif
 

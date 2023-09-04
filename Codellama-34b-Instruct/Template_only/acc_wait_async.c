@@ -6,35 +6,25 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a new OpenACC context
-    acc_context_t context = acc_create_context();
+    // Create a new asynchronous queue
+    acc_queue_t queue;
+    acc_queue_create(&queue, NULL);
 
-    // Create a new OpenACC queue
-    acc_queue_t queue = acc_create_queue(context);
+    // Create a new asynchronous task
+    acc_task_t task;
+    acc_task_create(&task, queue, NULL);
 
-    // Create a new OpenACC device
-    acc_device_t device = acc_create_device(context, 0);
+    // Wait for the task to complete
+    acc_wait_async(task, NULL);
 
-    // Create a new OpenACC kernel
-    acc_kernel_t kernel = acc_create_kernel(context, "my_kernel");
-
-    // Set the kernel to run asynchronously
-    acc_set_kernel_async(kernel, 1);
-
-    // Launch the kernel
-    acc_launch_kernel(kernel, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-    // Wait for the kernel to complete
-    acc_wait_async(queue, kernel);
-
-    // Check if the kernel completed successfully
-    if (acc_get_kernel_status(kernel) != ACC_KERNEL_COMPLETED) {
+    // Check if the task completed successfully
+    if (acc_task_get_status(task) != ACC_TASK_COMPLETE) {
         err = 1;
     }
 
-    // Clean up the OpenACC context and queue
-    acc_destroy_context(context);
-    acc_destroy_queue(queue);
+    // Clean up the task and queue
+    acc_task_destroy(task);
+    acc_queue_destroy(queue);
 
     return err;
 }

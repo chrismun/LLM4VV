@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <openacc.h>
-
-#define NUM_TEST_CALLS 10
-#define SEED 12345
+#include "acc_testsuite.h"
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -16,26 +9,22 @@ int test1(){
     // Create a random array of integers
     int* arr = (int*)malloc(sizeof(int) * 10);
     for (int i = 0; i < 10; i++) {
-        arr[i] = rand() % 100;
+        arr[i] = rand();
     }
 
-    // Create a device pointer to the array
-    int* d_arr;
-    acc_map_data(arr, sizeof(int) * 10, &d_arr);
+    // Map the array to the device
+    acc_map_data(arr, 10, sizeof(int));
 
-    // Unmap the device pointer
-    acc_unmap_data(d_arr);
+    // Unmap the array from the device
+    acc_unmap_data(arr);
 
-    // Check that the array is still accessible on the host
-    for (int i = 0; i < 10; i++) {
-        if (arr[i] != d_arr[i]) {
-            err = 1;
-            break;
-        }
+    // Check that the array is no longer mapped to the device
+    if (acc_is_mapped(arr)) {
+        err = 1;
     }
 
-    // Free the device pointer
-    acc_free(d_arr);
+    // Free the array
+    free(arr);
 
     return err;
 }

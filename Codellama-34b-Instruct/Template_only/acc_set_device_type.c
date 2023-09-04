@@ -9,56 +9,36 @@ int test1(){
     // Set the device type to GPU
     acc_set_device_type(ACC_DEVICE_TYPE_GPU);
 
-    // Allocate memory on the device
-    int *a = (int *)acc_malloc(sizeof(int));
-    int *b = (int *)acc_malloc(sizeof(int));
+    // Create a data array on the device
+    int *data = (int *)acc_malloc(sizeof(int) * 10);
+
+    // Initialize the data array with random values
+    for (int i = 0; i < 10; i++) {
+        data[i] = rand();
+    }
 
     // Set the device type to CPU
     acc_set_device_type(ACC_DEVICE_TYPE_CPU);
 
-    // Allocate memory on the device
-    int *c = (int *)acc_malloc(sizeof(int));
-    int *d = (int *)acc_malloc(sizeof(int));
+    // Create a data array on the device
+    int *data_cpu = (int *)acc_malloc(sizeof(int) * 10);
 
-    // Set the device type to GPU
-    acc_set_device_type(ACC_DEVICE_TYPE_GPU);
+    // Initialize the data array with random values
+    for (int i = 0; i < 10; i++) {
+        data_cpu[i] = rand();
+    }
 
-    // Copy data from host to device
-    acc_memcpy(a, &x, sizeof(int));
-    acc_memcpy(b, &y, sizeof(int));
+    // Compare the data arrays
+    for (int i = 0; i < 10; i++) {
+        if (data[i] != data_cpu[i]) {
+            err = 1;
+            break;
+        }
+    }
 
-    // Set the device type to CPU
-    acc_set_device_type(ACC_DEVICE_TYPE_CPU);
-
-    // Copy data from host to device
-    acc_memcpy(c, &z, sizeof(int));
-    acc_memcpy(d, &w, sizeof(int));
-
-    // Set the device type to GPU
-    acc_set_device_type(ACC_DEVICE_TYPE_GPU);
-
-    // Launch the kernel
-    acc_launch(kernel, a, b, c, d);
-
-    // Set the device type to CPU
-    acc_set_device_type(ACC_DEVICE_TYPE_CPU);
-
-    // Launch the kernel
-    acc_launch(kernel, c, d, a, b);
-
-    // Set the device type to GPU
-    acc_set_device_type(ACC_DEVICE_TYPE_GPU);
-
-    // Free memory on the device
-    acc_free(a);
-    acc_free(b);
-
-    // Set the device type to CPU
-    acc_set_device_type(ACC_DEVICE_TYPE_CPU);
-
-    // Free memory on the device
-    acc_free(c);
-    acc_free(d);
+    // Free the data arrays
+    acc_free(data);
+    acc_free(data_cpu);
 
     return err;
 }
