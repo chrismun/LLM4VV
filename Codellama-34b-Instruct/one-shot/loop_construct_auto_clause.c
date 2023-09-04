@@ -4,28 +4,23 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define SEED 12345
-#define PRECISION 0.0001
+#define PRECISION 0.00001
 
 int test_loop_auto(int n) {
     int err = 0;
-    srand(SEED);
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
+    int *a = (int *)malloc(n * sizeof(int));
+    int *b = (int *)malloc(n * sizeof(int));
 
     for (int x = 0; x < n; ++x) {
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        a[x] = rand() % 100;
         b[x] = 0;
     }
 
     #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels loop auto(b[0:n])
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x) {
-                b[x] = a[x];
-            }
+        #pragma acc kernels loop auto(x)
+        for (int x = 0; x < n; ++x) {
+            b[x] = a[x];
         }
     }
 
@@ -43,9 +38,9 @@ int main() {
     int failed;
 
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_loop_auto(x);
+        failed = test_loop_auto(100);
         if (failed != 0) {
-            failcode = failcode + (1 << x);
+            failcode = failcode + (1 << 0);
         }
     }
 

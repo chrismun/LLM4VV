@@ -16,9 +16,9 @@ int test_data_present(int n) {
         b[x] = 0;
     }
 
-    #pragma acc data present(a[0:n])
+    #pragma acc data present(a[0:n], b[0:n])
     {
-        #pragma acc kernels present(b[0:n])
+        #pragma acc kernels
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x) {
@@ -41,9 +41,9 @@ int main() {
     int failed;
 
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_data_present(x);
+        failed = test_data_present(10);
         if (failed != 0) {
-            failcode = failcode + (1 << x);
+            failcode = failcode + (1 << 0);
         }
     }
 

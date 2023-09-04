@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <openacc.h>
+#include <math.h>
+#include <acc_testsuite.h>
 
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.001
-#define SEED 1234
-
+#ifndef T1
+// T1:kernels,data,data-region,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
@@ -18,7 +17,7 @@ int test1(){
         b[x] = 0;
     }
 
-    #pragma acc declare create(a[0:n])
+    #pragma acc data create(a[0:n], b[0:n])
     {
         #pragma acc kernels create(b[0:n])
         {
@@ -37,6 +36,7 @@ int test1(){
 
     return err;
 }
+#endif
 
 int main(){
     int failcode = 0;

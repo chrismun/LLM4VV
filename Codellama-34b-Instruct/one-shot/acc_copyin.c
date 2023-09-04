@@ -4,10 +4,12 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
+#define SEED 12345
 #define PRECISION 0.0001
 
-int test_set_directive(int n) {
+int test_acc_copyin(void) {
     int err = 0;
+    srand(SEED);
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
@@ -18,7 +20,7 @@ int test_set_directive(int n) {
 
     #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels copyout(b[0:n])
+        #pragma acc kernels copyin(b[0:n])
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x) {
@@ -40,11 +42,12 @@ int main() {
     int failcode = 0;
     int failed;
 
+    failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_set_directive(100);
-        if (failed != 0) {
-            failcode = failcode + (1 << 0);
-        }
+        failed = failed + test_acc_copyin();
+    }
+    if (failed != 0) {
+        failcode = failcode + (1 << 0);
     }
 
     return failcode;

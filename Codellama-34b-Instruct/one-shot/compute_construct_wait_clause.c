@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define SEED 12345
 #define PRECISION 0.0001
 
 int test2(){
@@ -21,7 +19,7 @@ int test2(){
 
     #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels copyout(b[0:n])
+        #pragma acc kernels wait(b[0:n])
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x){
@@ -29,8 +27,6 @@ int test2(){
             }
         }
     }
-
-    #pragma acc wait
 
     for (int x = 0; x < n; ++x){
         if (fabs(b[x] - a[x]) > PRECISION){

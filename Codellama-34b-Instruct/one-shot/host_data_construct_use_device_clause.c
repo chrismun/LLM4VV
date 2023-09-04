@@ -17,13 +17,15 @@ int main() {
     // Copy the host array to the device array
     #pragma acc host_data use_device(device_array)
     {
-        #pragma acc parallel loop
-        for (int i = 0; i < 10; i++) {
-            device_array[i] = host_array[i];
+        #pragma acc parallel
+        {
+            for (int i = 0; i < 10; i++) {
+                device_array[i] = host_array[i];
+            }
         }
     }
 
-    // Verify that the device array contains the correct values
+    // Check that the device array is equal to the host array
     for (int i = 0; i < 10; i++) {
         if (device_array[i] != host_array[i]) {
             failcode = 1;

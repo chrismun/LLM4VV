@@ -1,4 +1,7 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <acc_testsuite.h>
 
 #ifndef T1
 //T1:kernels,data,data-region,V:1.0-2.7
@@ -13,9 +16,9 @@ int test1(){
         b[x] = 0;
     }
 
-    #pragma acc data deviceptr(a[0:n])
+    #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels deviceptr(b[0:n])
+        #pragma acc kernels copyout(b[0:n])
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x){

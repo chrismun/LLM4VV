@@ -1,31 +1,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
+#define SEED 12345
 #define PRECISION 0.0001
 
-int test_loop_seq(int n) {
+int test2(){
     int err = 0;
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int x = 0; x < n; ++x) {
+    for (int x = 0; x < n; ++x){
         a[x] = rand() / (real_t)(RAND_MAX / 10);
         b[x] = 0;
     }
 
     #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels loop seq
-        for (int x = 0; x < n; ++x) {
-            b[x] = a[x];
+        #pragma acc kernels loop seq(1)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
         }
     }
 
-    for (int x = 0; x < n; ++x) {
-        if (fabs(b[x] - a[x]) > PRECISION) {
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
             err += 1;
         }
     }
@@ -33,16 +39,17 @@ int test_loop_seq(int n) {
     return err;
 }
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_loop_seq(100);
-        if (failed != 0) {
-            failcode = failcode + (1 << 0);
-        }
+#ifndef T2
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
     }
-
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
+    }
+#endif
     return failcode;
 }

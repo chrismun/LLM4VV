@@ -4,8 +4,8 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define SEED 12345
-#define PRECISION 0.0001
+#define SEED 1234
+#define PRECISION 0.001
 
 int test2(){
     int err = 0;

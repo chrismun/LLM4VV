@@ -6,7 +6,7 @@
 #define NUM_TEST_CALLS 10
 #define PRECISION 0.0001
 
-int test_set_directive(int n) {
+int test_acc_set_default_async(int n) {
     int err = 0;
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
@@ -16,9 +16,9 @@ int test_set_directive(int n) {
         b[x] = 0;
     }
 
-    #pragma acc data copyin(a[0:n])
+    #pragma acc set default async
     {
-        #pragma acc kernels copyout(b[0:n])
+        #pragma acc kernels
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x) {
@@ -41,7 +41,7 @@ int main() {
     int failed;
 
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_set_directive(100);
+        failed = test_acc_set_default_async(10);
         if (failed != 0) {
             failcode = failcode + (1 << 0);
         }

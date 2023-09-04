@@ -1,52 +1,50 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <openacc.h>
+#include "acc_testsuite.h"
 
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.0001
-
-int test_declare_link_clause(void) {
+#ifndef T1
+//T1:kernels,data,data-region,V:1.0-2.7
+int test1(){
     int err = 0;
-    int *a = (int *)malloc(sizeof(int) * 10);
-    int *b = (int *)malloc(sizeof(int) * 10);
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int i = 0; i < 10; i++) {
-        a[i] = i;
-        b[i] = 0;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    #pragma acc declare link(a[0:10])
+    #pragma acc declare link(a[0:n])
     {
-        #pragma acc kernels
+        #pragma acc kernels copyout(b[0:n])
         {
             #pragma acc loop
-            for (int i = 0; i < 10; i++) {
-                b[i] = a[i];
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
             }
         }
     }
 
-    for (int i = 0; i < 10; i++) {
-        if (b[i] != a[i]) {
-            err++;
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
         }
     }
 
-    free(a);
-    free(b);
-
     return err;
 }
+#endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    failed = test_declare_link_clause();
-    if (failed != 0) {
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-
+#endif
     return failcode;
 }

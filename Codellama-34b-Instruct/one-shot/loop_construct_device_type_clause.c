@@ -1,47 +1,54 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.0001
+#define PRECISION 0.001
 
-int test_loop_device_type(int n) {
+int test2(){
     int err = 0;
-    int *a = (int *)malloc(n * sizeof(int));
-    int *b = (int *)malloc(n * sizeof(int));
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int i = 0; i < n; i++) {
-        a[i] = i;
-        b[i] = 0;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
+    #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels loop device_type(acc_device_host)
-        for (int i = 0; i < n; i++) {
-            b[i] = a[i];
+        #pragma acc kernels device_type(acc_device_default) copyout(b[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
         }
     }
 
-    for (int i = 0; i < n; i++) {
-        if (fabs(b[i] - a[i]) > PRECISION) {
-            err++;
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
         }
     }
 
     return err;
 }
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
-        failed = test_loop_device_type(i);
-        if (failed != 0) {
-            failcode = failcode + (1 << i);
-        }
+#ifndef T2
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
     }
-
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
+    }
+#endif
     return failcode;
 }

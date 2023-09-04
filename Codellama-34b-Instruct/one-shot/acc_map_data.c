@@ -4,11 +4,10 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.00001
+#define PRECISION 0.0001
 
-int test_acc_map_data() {
+int test_acc_map_data(int n) {
     int err = 0;
-    int n = 100;
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
@@ -17,9 +16,9 @@ int test_acc_map_data() {
         b[x] = 0;
     }
 
-    #pragma acc data copyin(a[0:n])
+    #pragma acc data map(to: a[0:n]) map(from: b[0:n])
     {
-        #pragma acc kernels map(b[0:n])
+        #pragma acc kernels
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x) {
@@ -41,12 +40,11 @@ int main() {
     int failcode = 0;
     int failed;
 
-    failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test_acc_map_data();
-    }
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
+        failed = test_acc_map_data(10);
+        if (failed != 0) {
+            failcode = failcode + (1 << 0);
+        }
     }
 
     return failcode;

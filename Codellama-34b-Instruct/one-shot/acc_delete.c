@@ -6,7 +6,7 @@
 #define NUM_TEST_CALLS 10
 #define PRECISION 0.0001
 
-int test_attach_detach(int n) {
+int test_acc_delete(int n) {
     int err = 0;
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
@@ -41,9 +41,9 @@ int main() {
     int failed;
 
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_attach_detach(10);
+        failed = test_acc_delete(x);
         if (failed != 0) {
-            failcode = failcode + (1 << 0);
+            failcode = failcode + (1 << x);
         }
     }
 

@@ -4,9 +4,9 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.0001
+#define PRECISION 0.001
 
-int test_set_directive(int n) {
+int test_acc_create(int n) {
     int err = 0;
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
@@ -41,7 +41,7 @@ int main() {
     int failed;
 
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_set_directive(100);
+        failed = test_acc_create(10);
         if (failed != 0) {
             failcode = failcode + (1 << 0);
         }

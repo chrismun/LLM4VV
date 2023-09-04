@@ -1,13 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.0001
+#define PRECISION 0.001
 
-int test_acc_wait_any(void) {
+int main() {
+    int failcode = 0;
+    int failed;
+
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+        failed = failed + test1();
+    }
+    if (failed != 0) {
+        failcode = failcode + (1 << 0);
+    }
+#endif
+
+    return failcode;
+}
+
+int test1() {
     int err = 0;
-    int n = 100;
+    srand(SEED);
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
@@ -36,19 +54,4 @@ int test_acc_wait_any(void) {
     }
 
     return err;
-}
-
-int main() {
-    int failcode = 0;
-    int failed;
-
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test_acc_wait_any();
-    }
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
-    }
-
-    return failcode;
 }

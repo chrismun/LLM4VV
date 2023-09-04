@@ -8,7 +8,7 @@
 
 int test_init(void) {
     int err = 0;
-    int n = 10;
+    int n = 100;
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
@@ -17,9 +17,9 @@ int test_init(void) {
         b[x] = 0;
     }
 
-    #pragma acc data copyin(a[0:n])
+    #pragma acc init(a[0:n])
     {
-        #pragma acc kernels init(b[0:n])
+        #pragma acc kernels
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x) {
@@ -45,6 +45,7 @@ int main() {
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
         failed = failed + test_init();
     }
+
     if (failed != 0) {
         failcode = failcode + (1 << 0);
     }

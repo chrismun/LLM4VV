@@ -8,30 +8,35 @@
 
 int test_acc_wait_async(void) {
     int err = 0;
-    int *a = (int *)malloc(sizeof(int) * NUM_TEST_CALLS);
-    int *b = (int *)malloc(sizeof(int) * NUM_TEST_CALLS);
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
+    for (int i = 0; i < 10; i++) {
         a[i] = i;
         b[i] = 0;
     }
 
-    #pragma acc data copyin(a[0:NUM_TEST_CALLS])
+    #pragma acc data copyin(a[0:10])
     {
-        #pragma acc kernels copyout(b[0:NUM_TEST_CALLS])
+        #pragma acc kernels async(1)
         {
             #pragma acc loop
-            for (int i = 0; i < NUM_TEST_CALLS; i++) {
+            for (int i = 0; i < 10; i++) {
                 b[i] = a[i];
             }
         }
     }
 
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
-        if (fabs(b[i] - a[i]) > PRECISION) {
+    #pragma acc wait async(1)
+
+    for (int i = 0; i < 10; i++) {
+        if (b[i] != a[i]) {
             err++;
         }
     }
+
+    free(a);
+    free(b);
 
     return err;
 }

@@ -4,12 +4,10 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define SEED 12345
-#define PRECISION 0.00001
+#define PRECISION 0.0001
 
 int test_acc_init(int n) {
     int err = 0;
-    srand(SEED);
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
@@ -42,12 +40,11 @@ int main() {
     int failcode = 0;
     int failed;
 
-    failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test_acc_init(1000);
-    }
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
+        failed = test_acc_init(10);
+        if (failed != 0) {
+            failcode = failcode + (1 << 0);
+        }
     }
 
     return failcode;

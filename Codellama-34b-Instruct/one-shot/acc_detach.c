@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.0001
+#define PRECISION 1e-6
 
-int test_set_directive(int n) {
+int test_acc_detach(int n) {
     int err = 0;
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
@@ -27,6 +26,8 @@ int test_set_directive(int n) {
         }
     }
 
+    #pragma acc detach(b[0:n])
+
     for (int x = 0; x < n; ++x) {
         if (fabs(b[x] - a[x]) > PRECISION) {
             err += 1;
@@ -41,7 +42,7 @@ int main() {
     int failed;
 
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_set_directive(100);
+        failed = test_acc_detach(10);
         if (failed != 0) {
             failcode = failcode + (1 << 0);
         }

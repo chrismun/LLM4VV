@@ -3,54 +3,58 @@
 #include <string.h>
 #include <openacc.h>
 
-#define NUM_DEVICES 4
-#define DEVICE_NUM 1
+#define NUM_DEVICES 2
+#define NUM_TEST_CALLS 10
 
 int main() {
-    int i, j, k;
-    int num_devices;
-    int device_num;
-    int *devices;
-    int *device_nums;
+    int failcode = 0;
+    int failed;
 
-    // Initialize the devices and device numbers
-    devices = (int *)malloc(NUM_DEVICES * sizeof(int));
-    device_nums = (int *)malloc(NUM_DEVICES * sizeof(int));
-    for (i = 0; i < NUM_DEVICES; i++) {
-        devices[i] = i;
-        device_nums[i] = i;
+    // Initialize the OpenACC runtime
+    acc_init(acc_device_default);
+
+    // Set the number of devices to 2
+    acc_set_device_num(NUM_DEVICES);
+
+    // Allocate memory for the device arrays
+    real_t *a = (real_t *)acc_malloc(sizeof(real_t) * NUM_DEVICES);
+    real_t *b = (real_t *)acc_malloc(sizeof(real_t) * NUM_DEVICES);
+
+    // Initialize the device arrays
+    for (int i = 0; i < NUM_DEVICES; i++) {
+        a[i] = i;
+        b[i] = 0;
     }
 
-    // Set the device number
-    acc_set_device_num(DEVICE_NUM);
+    // Set the device number to 0
+    acc_set_device_num(0);
 
-    // Get the number of devices and the device number
-    num_devices = acc_get_num_devices();
-    device_num = acc_get_device_num();
+    // Copy the data from the host to the device
+    acc_memcpy_to_device(a, b, sizeof(real_t) * NUM_DEVICES);
 
-    // Check if the device number is set correctly
-    if (device_num != DEVICE_NUM) {
-        printf("Error: Device number is not set correctly.\n");
-        return 1;
-    }
+    // Set the device number to 1
+    acc_set_device_num(1);
 
-    // Check if the number of devices is correct
-    if (num_devices != NUM_DEVICES) {
-        printf("Error: Number of devices is not correct.\n");
-        return 1;
-    }
+    // Copy the data from the host to the device
+    acc_memcpy_to_device(a, b, sizeof(real_t) * NUM_DEVICES);
 
-    // Check if the device numbers are correct
-    for (i = 0; i < NUM_DEVICES; i++) {
-        if (device_nums[i] != devices[i]) {
-            printf("Error: Device number %d is not correct.\n", i);
-            return 1;
+    // Set the device number to 0
+    acc_set_device_num(0);
+
+    // Copy the data from the device to the host
+    acc_memcpy_from_device(a, b, sizeof(real_t) * NUM_DEVICES);
+
+    // Check the results
+    for (int i = 0; i < NUM_DEVICES; i++) {
+        if (a[i] != b[i]) {
+            printf("Error: a[%d] = %f, b[%d] = %f\n", i, a[i], i, b[i]);
+            failcode = 1;
         }
     }
 
-    // Free the memory
-    free(devices);
-    free(device_nums);
+    // Clean up
+    acc_free(a);
+    acc_free(b);
 
-    return 0;
+    return failcode;
 }
