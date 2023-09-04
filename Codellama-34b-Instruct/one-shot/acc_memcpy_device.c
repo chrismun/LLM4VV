@@ -1,4 +1,7 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <acc_testsuite.h>
 
 #ifndef T1
 //T1:kernels,data,data-region,V:1.0-2.7

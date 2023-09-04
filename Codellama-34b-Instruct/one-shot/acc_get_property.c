@@ -1,22 +1,64 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <openacc.h>
+
+#define NUM_TEST_CALLS 10
+#define PRECISION 0.00001
+
+int test_acc_get_property(int device_type, int device_id, int property_type, int property_id, int expected_value) {
+    int err = 0;
+    int actual_value;
+
+    // Set the device type and device ID
+    acc_set_device_type(device_type);
+    acc_set_device_id(device_id);
+
+    // Get the property value
+    actual_value = acc_get_property(property_type, property_id);
+
+    // Check if the actual value matches the expected value
+    if (actual_value != expected_value) {
+        err = 1;
+        printf("Error: Expected value for property %d (%s) is %d, but got %d\n", property_id, acc_get_property_string(property_type, property_id), expected_value, actual_value);
+    }
+
+    return err;
+}
 
 int main() {
     int failcode = 0;
+    int failed;
 
-    // Create a device and a queue
-    acc_device_t device = acc_get_device(acc_device_default);
-    acc_queue_t queue = acc_get_queue(device);
+    // Test the acc get property clause for different device types and properties
+    failed = test_acc_get_property(ACC_DEVICE_TYPE_GPU, 0, ACC_PROPERTY_TYPE_MEMORY, ACC_PROPERTY_MEMORY_SIZE, 1024);
+    if (failed != 0) {
+        failcode = failcode + (1 << 0);
+    }
 
-    // Set the device and queue properties
-    acc_set_device_property(device, acc_device_property_queue, queue);
+    failed = test_acc_get_property(ACC_DEVICE_TYPE_CPU, 0, ACC_PROPERTY_TYPE_MEMORY, ACC_PROPERTY_MEMORY_SIZE, 1024);
+    if (failed != 0) {
+        failcode = failcode + (1 << 1);
+    }
 
-    // Get the device and queue properties
-    acc_device_property_t device_property = acc_get_device_property(device);
-    acc_queue_property_t queue_property = acc_get_queue_property(queue);
+    failed = test_acc_get_property(ACC_DEVICE_TYPE_ACCELERATOR, 0, ACC_PROPERTY_TYPE_MEMORY, ACC_PROPERTY_MEMORY_SIZE, 1024);
+    if (failed != 0) {
+        failcode = failcode + (1 << 2);
+    }
 
-    // Check that the device and queue properties match the expected values
-    if (device_property != acc_device_property_queue || queue_property != acc_queue_property_default) {
-        failcode = 1;
+    failed = test_acc_get_property(ACC_DEVICE_TYPE_GPU, 0, ACC_PROPERTY_TYPE_MAX_THREADS, ACC_PROPERTY_MAX_THREADS, 1024);
+    if (failed != 0) {
+        failcode = failcode + (1 << 3);
+    }
+
+    failed = test_acc_get_property(ACC_DEVICE_TYPE_CPU, 0, ACC_PROPERTY_TYPE_MAX_THREADS, ACC_PROPERTY_MAX_THREADS, 1024);
+    if (failed != 0) {
+        failcode = failcode + (1 << 4);
+    }
+
+    failed = test_acc_get_property(ACC_DEVICE_TYPE_ACCELERATOR, 0, ACC_PROPERTY_TYPE_MAX_THREADS, ACC_PROPERTY_MAX_THREADS, 1024);
+    if (failed != 0) {
+        failcode = failcode + (1 << 5);
     }
 
     return failcode;

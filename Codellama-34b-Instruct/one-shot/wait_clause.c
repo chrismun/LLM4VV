@@ -4,7 +4,7 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.001
+#define PRECISION 0.0001
 
 int test2(){
     int err = 0;

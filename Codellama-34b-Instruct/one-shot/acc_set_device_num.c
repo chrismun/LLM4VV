@@ -1,53 +1,56 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <acc_testsuite.h>
+#include <openacc.h>
 
-#ifndef T1
-//T1:kernels,data,data-region,V:1.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+#define NUM_DEVICES 4
+#define DEVICE_NUM 1
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0;
+int main() {
+    int i, j, k;
+    int num_devices;
+    int device_num;
+    int *devices;
+    int *device_nums;
+
+    // Initialize the devices and device numbers
+    devices = (int *)malloc(NUM_DEVICES * sizeof(int));
+    device_nums = (int *)malloc(NUM_DEVICES * sizeof(int));
+    for (i = 0; i < NUM_DEVICES; i++) {
+        devices[i] = i;
+        device_nums[i] = i;
     }
 
-    #pragma acc data copyin(a[0:n])
-    {
-        #pragma acc kernels copyout(b[0:n])
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
+    // Set the device number
+    acc_set_device_num(DEVICE_NUM);
+
+    // Get the number of devices and the device number
+    num_devices = acc_get_num_devices();
+    device_num = acc_get_device_num();
+
+    // Check if the device number is set correctly
+    if (device_num != DEVICE_NUM) {
+        printf("Error: Device number is not set correctly.\n");
+        return 1;
+    }
+
+    // Check if the number of devices is correct
+    if (num_devices != NUM_DEVICES) {
+        printf("Error: Number of devices is not correct.\n");
+        return 1;
+    }
+
+    // Check if the device numbers are correct
+    for (i = 0; i < NUM_DEVICES; i++) {
+        if (device_nums[i] != devices[i]) {
+            printf("Error: Device number %d is not correct.\n", i);
+            return 1;
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - a[x]) > PRECISION){
-            err += 1;
-        }
-    }
+    // Free the memory
+    free(devices);
+    free(device_nums);
 
-    return err;
-}
-#endif
-
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+    return 0;
 }

@@ -1,50 +1,57 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <openacc.h>
 
-#ifndef T1
-//T1:kernels,data,data-region,V:1.0-2.7
-int test1(){
+#define NUM_TEST_CALLS 10
+#define PRECISION 0.00001
+
+int test_acc_get_default_async(int async) {
     int err = 0;
-    srand(SEED);
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0;
+    for (int i = 0; i < 10; i++) {
+        a[i] = i;
+        b[i] = 0;
     }
 
-    #pragma acc data copyin(a[0:n])
+    #pragma acc data copyin(a[0:10]) copyout(b[0:10])
     {
-        #pragma acc kernels copyout(b[0:n])
+        #pragma acc kernels async(async)
         {
             #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
+            for (int i = 0; i < 10; i++) {
+                b[i] = a[i];
             }
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - a[x]) > PRECISION){
-            err += 1;
+    for (int i = 0; i < 10; i++) {
+        if (fabs(b[i] - a[i]) > PRECISION) {
+            err++;
         }
     }
 
     return err;
 }
-#endif
 
-int main(){
+int main() {
     int failcode = 0;
     int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+
+    for (int i = 0; i < NUM_TEST_CALLS; i++) {
+        failed = test_acc_get_default_async(i % 2);
+        if (failed != 0) {
+            failcode = failcode + (1 << i);
+        }
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+
+    if (failcode != 0) {
+        printf("Test failed with failcode %d\n", failcode);
+    } else {
+        printf("Test passed\n");
     }
-#endif
+
     return failcode;
 }

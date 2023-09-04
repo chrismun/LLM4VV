@@ -13,9 +13,9 @@ int test1(){
         b[x] = 0;
     }
 
-    #pragma acc data copyin(a[0:n])
+    #pragma acc data deviceptr(a[0:n])
     {
-        #pragma acc kernels copyout(b[0:n])
+        #pragma acc kernels deviceptr(b[0:n])
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x){

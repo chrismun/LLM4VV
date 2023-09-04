@@ -4,28 +4,21 @@
 
 int main() {
     int num_devices;
-    int device_num;
+    acc_get_device_num(&num_devices);
 
-    // Get the number of devices
-    num_devices = acc_get_num_devices();
-
-    // Check that the number of devices is greater than 0
-    if (num_devices <= 0) {
-        printf("Error: No devices found.\n");
+    if (num_devices == 0) {
+        printf("No OpenACC devices found.\n");
         return 1;
     }
 
-    // Get the device number
-    device_num = acc_get_device_num();
+    printf("Found %d OpenACC devices.\n", num_devices);
 
-    // Check that the device number is valid
-    if (device_num < 0 || device_num >= num_devices) {
-        printf("Error: Invalid device number.\n");
-        return 1;
+    for (int i = 0; i < num_devices; i++) {
+        acc_device_t device;
+        acc_get_device(&device, i);
+
+        printf("Device %d: %s\n", i, device.name);
     }
-
-    // Print the device number
-    printf("Device number: %d\n", device_num);
 
     return 0;
 }

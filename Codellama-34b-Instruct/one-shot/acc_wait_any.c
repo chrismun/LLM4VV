@@ -1,35 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.00001
+#define PRECISION 0.0001
 
-int main(){
-    int failcode = 0;
-    int failed;
-
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-
-    return failcode;
-}
-
-int test1(){
+int test_acc_wait_any(void) {
     int err = 0;
-    srand(SEED);
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    int n = 100;
+    real_t *a = (real_t *)malloc(n * sizeof(real_t));
+    real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int x = 0; x < n; ++x){
+    for (int x = 0; x < n; ++x) {
         a[x] = rand() / (real_t)(RAND_MAX / 10);
         b[x] = 0;
     }
@@ -39,7 +21,7 @@ int test1(){
         #pragma acc kernels copyout(b[0:n])
         {
             #pragma acc loop
-            for (int x = 0; x < n; ++x){
+            for (int x = 0; x < n; ++x) {
                 b[x] = a[x];
             }
         }
@@ -47,11 +29,26 @@ int test1(){
 
     #pragma acc wait any
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - a[x]) > PRECISION){
+    for (int x = 0; x < n; ++x) {
+        if (fabs(b[x] - a[x]) > PRECISION) {
             err += 1;
         }
     }
 
     return err;
+}
+
+int main() {
+    int failcode = 0;
+    int failed;
+
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+        failed = failed + test_acc_wait_any();
+    }
+    if (failed != 0) {
+        failcode = failcode + (1 << 0);
+    }
+
+    return failcode;
 }
