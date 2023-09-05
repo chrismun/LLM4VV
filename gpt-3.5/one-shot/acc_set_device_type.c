@@ -1,44 +1,48 @@
-#include "acc_testsuite.h"
-#ifndef T2
-//T2:serial,construct-independent,V:2.0-3.1
-int test2() {
+#ifndef T1
+//T1:directive,data,data-region,V:2.7
+int test1(){
     int err = 0;
-    int num_devices = acc_get_num_devices(acc_device_default);
+    srand(SEED);
 
-    // If there is at least one device other than the default (host) device,
-    if (num_devices > 1) {
-        #pragma acc data copyin(num_devices)
-        {
-            int device_type = 0;
-            #pragma acc parallel loop
-            for (int x = 0; x < num_devices; ++x) {
-                acc_device_type_t dev_type = acc_get_device_type(x);
-                if (dev_type != acc_device_default) {
-                    device_type = 1;
-                }
-            }
+    int device_type;
 
-            // Check if device type is set on at least one device other than the default
-            if (device_type == 0) {
-                err += 1;
-            }
-        }
+    #pragma acc set device_type(acc_device_default)
+    device_type = acc_get_device_type();
+
+    if (device_type != acc_device_default){
+        err += 1;
     }
+
+    #pragma acc set device_type(acc_device_host)
+    device_type = acc_get_device_type();
+
+    if (device_type != acc_device_host){
+        err += 2;
+    }
+
+    #ifdef _OPENACC
+    #pragma acc set device_type(acc_device_not_host)
+    device_type = acc_get_device_type();
+
+    if (device_type != acc_device_not_host){
+        err += 4;
+    }
+    #endif
 
     return err;
 }
 #endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-#ifndef T2
+#ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test2();
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-    if (failed != 0) {
-        failcode = failcode + (1 << 1);
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
     }
 #endif
     return failcode;

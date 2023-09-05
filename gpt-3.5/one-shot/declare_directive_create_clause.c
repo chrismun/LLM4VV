@@ -1,33 +1,24 @@
-#include "acc_testsuite.h"
-#ifndef T2
-//T2:declare,data,data-region,M:2.5-2.7
-int test2(){
+#ifndef T1
+//T1:declare,data,data-region,V:1.0-2.7
+int test1(){
     int err = 0;
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    int * a = (int *)malloc(sizeof(int));
+    *a = 0;
 
-    for (int x = 0; x < n; ++x){
-        a[x] = x;
-        b[x] = 0.0;
-    }
-
-    #pragma acc data copyin(a[0:n]) create(b[0:n])
+    #pragma acc data copyout(a[0:1])
     {
-        #pragma acc parallel
+        #pragma acc parallel num_gangs(1) num_workers(1) present(a)
         {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
+            #pragma acc declare create(b)
+            int b = 1;
+
+            *a = *a + b;
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (a[x] != b[x]){
-            err += 1;
-            break;
-        }
+    if (*a != 1){
+        err += 1;
     }
 
     return err;
@@ -37,13 +28,13 @@ int test2(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T2
+#ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test2();
+        failed = failed + test1();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 1);
+        failcode = failcode + (1 << 0);
     }
 #endif
     return failcode;

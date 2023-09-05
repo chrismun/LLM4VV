@@ -1,82 +1,66 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:wait_any,V:2.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+#include <openacc.h>
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-    real_t * c = (real_t *)malloc(n * sizeof(real_t));
+#define N 100000
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = rand() / (real_t)(RAND_MAX / 10);
-        c[x] = 0.0;
-    }
-
-    #pragma acc data copyin(a[0:n], b[0:n]) copyout(c[0:n])
-    {
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                c[x] = a[x] + b[x];
-            }
-        }
-
-        #pragma acc wait any
-
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                c[x] = c[x] * c[x];
-            }
-        }
-    }
-
-    real_t * d = (real_t *)malloc(n * sizeof(real_t));
-    real_t * e = (real_t *)malloc(n * sizeof(real_t));
-    real_t * f = (real_t *)malloc(n * sizeof(real_t));
-
-    for (int x = 0; x < n; ++x){
-        d[x] = a[x];
-        e[x] = b[x];
-        f[x] = 0.0;
-    }
-
-    for (int x = 0; x < n; ++x){
-        f[x] = d[x] + e[x];
-    }
-
-    for (int x = 0; x < n; ++x){
-        f[x] = f[x] * f[x];
-    }
-
-    for (int x = 0; x < n; ++x){
-        if (fabs(c[x] - f[x]) > PRECISION){
-            err += 1;
-            break;
-        }
-    }
-
-    return err;
+void sleep_ms(int milliseconds) {
+  usleep(milliseconds * 1000);
 }
-#endif
+ 
+int test_acc_wait_any(int *a, int *b, int *c, int *d) {
+  int i, failures = 0;
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+  #pragma acc parallel copyin(a[0:N], b[0:N]) copyout(c[0:N]) present(d[0:N])
+  {
+    #pragma acc loop
+    for (i = 0; i < N; i++) {
+      c[i] = a[i] + b[i];
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    } 
-#endif
+  }
 
-    return failcode;
+  #pragma acc parallel copyin(c[0:N]) async
+  {
+    #pragma acc loop
+    for (i = 0; i < N; i++) {
+      d[i] = c[i] * c[i];
+    }
+  }
+  
+  for (i = 0; i < N; i++) {
+    if (d[i] != (a[i]+ b[i]) * (a[i]+b[i])) {
+      failures++;
+    }
+  }
+
+  return failures;
+}
+
+#define NUM_TESTS 10
+
+int main() {
+  int a[N], b[N], c[N], d[N];
+  int successes = 0;
+
+  srand(time(NULL));
+  
+  for (int i = 0; i < N; i++) {
+    a[i] = rand()%10;
+    b[i] = rand()%10;
+  }
+
+  for (int t = 0; t < NUM_TESTS; t++) {
+    int failure = test_acc_wait_any(a, b, c, d);
+    if (failure == 0) {
+      successes++;
+    }
+    sleep_ms(1000);
+  }
+
+  printf("Successes: %d\n", successes);
+  printf("Failures: %d\n", NUM_TESTS - successes);
+  
+  return 0;
 }

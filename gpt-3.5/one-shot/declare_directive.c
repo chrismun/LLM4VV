@@ -1,29 +1,28 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:declare,data,construct-present,V:2.7-2.7
+//T1:declare,data,V:1.0-2.7
 int test1(){
     int err = 0;
-    srand(SEED);
 
-    real_t a[n];
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        a[x] = x;
+        b[x] = 0.0;
     }
 
-    #pragma acc declare create(b)
-    real_t * b = (real_t *) malloc(n * sizeof(real_t));
-
-    #pragma acc parallel copyin(a[0:n])
+    #pragma acc enter data copyin(a[0:n]) create(b[0:n])
+    #pragma acc kernels present(a[0:n]) copyout(b[0:n])
     {
         #pragma acc loop
         for (int x = 0; x < n; ++x){
             b[x] = a[x];
         }
     }
+    #pragma acc exit data copyout(b[0:n])
 
     for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
+        if (b[x] != a[x]){
             err += 1;
             break;
         }

@@ -1,37 +1,32 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:directive,set,V:2.7-2.7
-int test1(){
+//T1:parallel,set,V:2.7
+int test1()
+{
     int err = 0;
+
     srand(SEED);
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    int * a = (int *)malloc(n * sizeof(int));
+    int * b = (int *)malloc(n * sizeof(int));
 
     for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+        a[x] = 0;
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
     }
 
-    // set the device to run on the GPU
-    #pragma acc set device_num(0)
-
-    #pragma acc data copyin(a[0:n])
+    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
     {
-        #pragma acc parallel copyout(b[0:n])
+        #pragma acc parallel 
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x){
-                b[x] = a[x];
+                a[x] = 1; // Set all elements of a to 1
             }
         }
     }
 
-    // set the device to run on the CPU
-    #pragma acc set device_num(1)
-
     for (int x = 0; x < n; ++x){
-        if (b[x] != 0.0){
+        if (a[x] != 1){
             err += 1;
             break;
         }
@@ -41,7 +36,8 @@ int test1(){
 }
 #endif
 
-int main(){
+int main()
+{
     int failcode = 0;
     int failed;
 #ifndef T1

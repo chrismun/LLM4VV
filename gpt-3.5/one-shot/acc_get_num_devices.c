@@ -1,21 +1,30 @@
-#include "acc_testsuite.h"
+#ifndef T1
+//T1:parallel,data,data-region,V:1.0-2.7
+int test1(){
+    int err = 0;
+
+    // Get the number of devices
+    int num_devices = acc_get_num_devices(acc_device_unknown);
+
+    if (num_devices <= 0){
+        err += 1;
+    }
+
+    return err;
+}
+#endif
 
 int main(){
-    int fail = 0;
-    int num_devices = 0;
-
-    #pragma acc init
-
-    num_devices = acc_get_num_devices(acc_device_any);
-    if(num_devices < 1){
-        printf("Error: No OpenACC devices found\n");
-        fail = 1;
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-    else{
-        printf("Number of OpenACC devices found: %d\n", num_devices);
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
     }
-
-    #pragma acc shutdown
-
-    return fail;
+#endif
+    return failcode;
 }

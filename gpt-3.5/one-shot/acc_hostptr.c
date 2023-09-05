@@ -1,46 +1,28 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:data,data-region,V:1.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
-    int * a = (int *)malloc(N * sizeof(int));
-    int * b = (int *)malloc(N * sizeof(int));
+void acc_hostptr_test() {
+  int size = 10;
+  int *data = (int *) malloc(size * sizeof(int));
 
-    #pragma acc data copyin(a[0:N]) create(b[0:N])
-    {
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < N; ++x){
-                b[x] = a[x];
-            }
-        }
-    }
+  #pragma acc enter data create(data[:size])
 
-    for (int x = 0; x < N; ++x){
-        if (b[x] != a[x]){
-            err += 1;
-            break;
-        }
-    }
+  for (int i = 0; i < size; i++) {
+    data[i] = i;
+  }
 
-    return err;
+  #pragma acc exit data copyout(data[:size])
+
+  for (int i = 0; i < size; i++) {
+    printf("data[%d] = %d\n", i, data[i]);
+  }
+
+  free(data);
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+int main() {
+  acc_hostptr_test();
+
+  return 0;
 }

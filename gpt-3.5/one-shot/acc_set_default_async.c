@@ -1,6 +1,5 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:parallel,data,async,V:1.0-2.7
+//T1:parallel,data,data-region2,V:2.9-3.1
 int test1(){
     int err = 0;
     srand(SEED);
@@ -8,30 +7,26 @@ int test1(){
     real_t * a = (real_t *)malloc(n * sizeof(real_t));
     real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
-    {
-        #pragma acc parallel loop async(1)
-        for (int x = 0; x < n; ++x){
-            b[x] = a[x];
-        }
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
+    }
 
-        #pragma acc parallel loop async(2)
-        for (int x = 0; x < n; ++x){
-            b[x] = b[x] * 2.0;
+    #pragma acc data copyin(a[0:n])
+    {
+        #pragma acc parallel default(none) async(1) copyout(b[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
         }
     }
 
     #pragma acc wait(1)
-    for (int x = 0; x < n; ++x){
-        if (fabs(b[x]) > PRECISION){
-            err += 1;
-            break;
-        }
-    }
 
-    #pragma acc wait(2)
     for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - 2.0 * a[x]) > PRECISION){
+        if (fabs(a[x] - b[x]) > PRECISION){
             err += 1;
             break;
         }

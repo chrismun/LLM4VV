@@ -1,33 +1,32 @@
-#include "acc_testsuite.h"
-#ifndef T2
-//T2:wait,wait-region,construct-independent,V:2.0-2.7
-int test2(){
+#ifndef T1
+//T1:wait,async,V:1.0-2.7
+int test1(){
     int err = 0;
+    float* a = (float*)malloc(n * sizeof(float));
+    float* b = (float*)malloc(n * sizeof(float));
+    float* c = (float*)malloc(n * sizeof(float));
+
     srand(SEED);
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+    for (int i = 0; i < n; ++i){
+        a[i] = rand() / (float)(RAND_MAX / 10);
+        b[i] = rand() / (float)(RAND_MAX / 10);
+        c[i] = 0.0f;
     }
 
-    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
+    #pragma acc data copyin(a[0:n], b[0:n]) copyout(c[0:n])
     {
-        #pragma acc parallel
+        #pragma acc kernels wait
         {
             #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
+            for (int i = 0; i < n; ++i){
+                c[i] = a[i] + b[i];
             }
-            
-            #pragma acc wait
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
+    for (int i = 0; i < n; ++i){
+        if (fabs(c[i] - (a[i] + b[i])) > PRECISION){
             err += 1;
             break;
         }
@@ -40,13 +39,13 @@ int test2(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T2
+#ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test2();
+    for (int i = 0; i < NUM_TEST_CALLS; ++i){
+        failed = failed + test1();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 1);
+        failcode = failcode + (1 << 0);
     }
 #endif
     return failcode;

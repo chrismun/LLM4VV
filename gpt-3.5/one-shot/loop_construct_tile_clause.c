@@ -1,30 +1,32 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:loop,tile,V:2.7-2.7
+//T1:parallel,loop,tile,V:2.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int * a = (int *)malloc(n * sizeof(int));
-    int * b = (int *)malloc(n * sizeof(int));
-    int * c = (int *)malloc(n * sizeof(int));
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
-        a[x] = rand() % 100;
-        b[x] = rand() % 100;
-        c[x] = 0;
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        c[x] = 0.0;
     }
 
     #pragma acc data copyin(a[0:n], b[0:n]) copyout(c[0:n])
     {
-        #pragma acc serial loop tile(4)
-        for (int x = 0; x < n; ++x){
-            c[x] = a[x] + b[x];
+        #pragma acc parallel
+        {
+            #pragma acc loop tile(4)
+            for (int x = 0; x < n; ++x){
+                c[x] = a[x] + b[x];
+            }
         }
     }
 
     for (int x = 0; x < n; ++x){
-        if (c[x] != (a[x] + b[x])){
+        if (fabs(c[x] - (a[x] + b[x])) > PRECISION){
             err += 1;
             break;
         }

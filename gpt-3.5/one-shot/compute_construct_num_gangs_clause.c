@@ -1,38 +1,43 @@
-#include "acc_testsuite.h"
-#ifndef T2
-//T2:parallel,loop,loop-interchange,V:1.0-2.7
-int test2(){
+#ifndef T1
+//T1:parallel,data,data-region,V:1.0-2.7
+int test1(){
     int err = 0;
+    int i;
+    int count = 0;
+    int *host_data = (int *)malloc(n * sizeof(int));
+    int *device_data = (int *)malloc(n * sizeof(int));
 
-    srand(SEED);
-
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-    real_t * c = (real_t *)malloc(n * sizeof(real_t));
-    real_t * d = (real_t *)malloc(n * sizeof(real_t));
-
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = rand() / (real_t)(RAND_MAX / 10);
-        c[x] = rand() / (real_t)(RAND_MAX / 10);
-        d[x] = 0.0;
+    for (i = 0; i < n; ++i){
+        host_data[i] = 0;
+        device_data[i] = 0;
     }
 
-    #pragma acc data copyin(a[0:n], b[0:n], c[0:n])
+    #pragma acc data copyin(host_data[0:n])
     {
-        #pragma acc kernels
-        #pragma acc loop gang num_gangs(16)
-        for (int x = 0; x < n; ++x){
-            d[x] = a[x] + b[x] + c[x];
+        #pragma acc parallel compute num_gangs(1)
+        {
+            #pragma acc loop gang
+            for(i=0; i<n; i++)
+            {
+                device_data[i] = 1;
+            }
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(d[x] - (a[x] + b[x] + c[x])) > PRECISION){
-            err += 1;
-            break;
-        }
+    for(i=0; i<n; i++)
+    {
+        count += device_data[i];
     }
+
+    if (count == n){
+        err = 0;
+    }
+    else{
+        err = 1;
+    }
+
+    free(host_data);
+    free(device_data);
 
     return err;
 }
@@ -41,13 +46,13 @@ int test2(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T2
+#ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test2();
+        failed = failed + test1();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 1);
+        failcode = failcode + (1 << 0);
     }
 #endif
     return failcode;

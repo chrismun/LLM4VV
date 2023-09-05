@@ -1,39 +1,43 @@
-#include "acc_testsuite.h"
-#ifndef T2
-//T2:free,async,async-length,V:2.5-3.0
-int test2(){
+#ifndef T1
+//T1:free,data,devonly,V:2.7
+int test1(){
     int err = 0;
     srand(SEED);
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    int * a = (int *)malloc(n * sizeof(int));
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-    }
+    #pragma acc enter data copyin(a[0:n])
 
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-
-    #pragma acc enter data create(a[0:n])
-    #pragma acc enter data copyin(b[0:n])
-
-    #pragma acc parallel async
+    #pragma acc parallel present(a)
     {
-        #pragma acc loop gang
+        #pragma acc loop
         for (int x = 0; x < n; ++x){
-            b[x] = a[x];
+            a[x] = x;
         }
     }
 
-    #pragma acc wait
+    #pragma acc exit data copyout(a[0:n])
 
-    #pragma acc exit data copyout(b[0:n]) delete(a[0:n])
+    #pragma acc enter data copyin(a[0:n])
+
+    #pragma acc parallel present(a)
+    {
+        #pragma acc loop
+        for (int x = 0; x < n; ++x){
+            a[x] += x;
+        }
+    }
+
+    #pragma acc exit data copyout(a[0:n])
 
     for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
+        if (a[x] != 2 * x){
             err += 1;
             break;
         }
     }
+
+    free(a);
 
     return err;
 }
@@ -42,13 +46,13 @@ int test2(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T2
+#ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test2();
+        failed = failed + test1();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 1);
+        failcode = failcode + (1 << 0);
     }
 #endif
     return failcode;

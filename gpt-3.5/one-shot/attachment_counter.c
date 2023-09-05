@@ -1,50 +1,40 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:parallel,attach,V:2.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
+int main() {
+    int num_devices;
+    int *device_attachment_counters;
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+    // Get the number of devices
+    #pragma acc control device_type(acc_device_nvidia) \
+        device_num(num_devices)
+    { }
+
+    // Allocate memory for the attachment counters
+    device_attachment_counters = (int *)malloc(num_devices * sizeof(int));
+    assert(device_attachment_counters != NULL);
+
+    // Initialize attachment counters to 0
+    for (int i = 0; i < num_devices; i++) {
+        device_attachment_counters[i] = 0;
     }
 
-    #pragma acc data copyin(a[0:n])
-    {
-        #pragma acc parallel
+    // Attach to each device and increment the attachment counter
+    #pragma acc parallel loop
+    for (int i = 0; i < num_devices; i++) {
+        #pragma acc host_data use_device(device_attachment_counters[i])
         {
-            int attach_counter = 0;
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                if (a[x] < 5.0){
-                    #pragma acc atomic capture
-                    attach_counter = attach_counter + 1;
-                }
-            }
-            #pragma acc atomic capture
-            err += attach_counter;
+            device_attachment_counters[i]++;
         }
     }
 
-    return err;
-}
-#endif
+    // Print the attachment counters for each device
+    for (int i = 0; i < num_devices; i++) {
+        printf("Attachment counter for device %d: %d\n", i, device_attachment_counters[i]);
+    }
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed += test1();
-    }
-    if (failed != 0){
-        failcode += (1 << 0);
-    }
-#endif
-    return failcode;
-}
+    // Free memory
+    free(device_attachment_counters);
+
+    return 0;
