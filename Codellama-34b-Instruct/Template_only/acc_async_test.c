@@ -6,24 +6,28 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a new asynchronous region
-    #pragma acc async
-    {
-        // Perform some computation in the asynchronous region
-        #pragma acc parallel loop
-        for (int i = 0; i < 100; i++) {
-            int a = i * 2;
-            int b = i * 3;
-            int c = a + b;
-            if (c != i * 5) {
-                err = 1;
-                break;
-            }
-        }
+    // Create a data array
+    int data[10];
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
     }
 
-    // Wait for the asynchronous region to complete
-    #pragma acc wait
+    // Create a device array
+    int device_data[10];
+    #pragma acc enter data copyin(data[:10])
+    #pragma acc parallel loop async(1)
+    for (int i = 0; i < 10; i++) {
+        device_data[i] = data[i];
+    }
+    #pragma acc exit data delete(device_data[:10])
+
+    // Verify that the data has been copied correctly
+    for (int i = 0; i < 10; i++) {
+        if (device_data[i] != data[i]) {
+            err = 1;
+            break;
+        }
+    }
 
     return err;
 }

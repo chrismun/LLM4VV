@@ -6,30 +6,24 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a data region
-    #pragma acc data
-    {
-        // Create a variable to store the result of the computation
-        int result;
+    // Create a data construct with a single data region
+    acc_data_construct_t data_construct;
+    data_construct.type = ACC_DATA_CONSTRUCT_TYPE_DATA;
+    data_construct.data_region = ACC_DATA_REGION_TYPE_HOST;
+    data_construct.data_region_size = 1;
+    data_construct.data_region_ptr = (void*)&data;
+    data_construct.data_region_ptr_size = sizeof(data);
 
-        // Attach the variable to the data region
-        #pragma acc attach(result)
+    // Attach the data construct to the current device
+    acc_attach_data_construct(&data_construct);
 
-        // Perform a computation on the data region
-        #pragma acc parallel
-        {
-            // Compute the result
-            result = 2 * 2;
-        }
-
-        // Detach the variable from the data region
-        #pragma acc detach(result)
-    }
-
-    // Check the result
-    if (result != 4){
+    // Verify that the data construct is attached to the current device
+    if (acc_get_data_construct_device(&data_construct) != acc_get_current_device()) {
         err = 1;
     }
+
+    // Detach the data construct from the current device
+    acc_detach_data_construct(&data_construct);
 
     return err;
 }

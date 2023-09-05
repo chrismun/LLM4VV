@@ -6,19 +6,37 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    #pragma acc parallel async(1)
-    {
-        int i = 0;
-        #pragma acc loop
-        for (i = 0; i < 10; i++) {
-            #pragma acc atomic update
-            i++;
+    int *a = (int *)malloc(10 * sizeof(int));
+    int *b = (int *)malloc(10 * sizeof(int));
+    int *c = (int *)malloc(10 * sizeof(int));
+
+    #pragma acc parallel loop async(a)
+    for (int i = 0; i < 10; i++) {
+        a[i] = i;
+    }
+
+    #pragma acc parallel loop async(b)
+    for (int i = 0; i < 10; i++) {
+        b[i] = i;
+    }
+
+    #pragma acc parallel loop async(c)
+    for (int i = 0; i < 10; i++) {
+        c[i] = i;
+    }
+
+    #pragma acc wait
+
+    for (int i = 0; i < 10; i++) {
+        if (a[i] != i || b[i] != i || c[i] != i) {
+            err = 1;
+            break;
         }
     }
 
-    if (i != 10) {
-        err = 1;
-    }
+    free(a);
+    free(b);
+    free(c);
 
     return err;
 }

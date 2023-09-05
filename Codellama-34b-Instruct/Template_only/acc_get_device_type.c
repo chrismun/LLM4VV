@@ -6,17 +6,12 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Get the device type
     int device_type = acc_get_device_type();
-
-    // Check if the device type is supported
-    if (device_type == ACC_DEVICE_TYPE_CPU || device_type == ACC_DEVICE_TYPE_GPU) {
-        // Device type is supported, return 0
-        return 0;
-    } else {
-        // Device type is not supported, return 1
-        return 1;
+    if (device_type != acc_device_type_host && device_type != acc_device_type_nvidia && device_type != acc_device_type_amd) {
+        err = 1;
     }
+
+    return err;
 }
 #endif
 

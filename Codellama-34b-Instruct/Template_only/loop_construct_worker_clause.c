@@ -11,6 +11,7 @@ int test1(){
     for (int i = 0; i < 10; i++) {
         // Do some work
         int result = i * i;
+        // Check if the result is correct
         if (result != i * i) {
             err = 1;
             break;

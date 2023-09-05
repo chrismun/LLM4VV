@@ -6,25 +6,31 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(sizeof(int) * 10);
-    int *b = (int *)malloc(sizeof(int) * 10);
-
-    #pragma acc parallel loop vector
-    for (int i = 0; i < 10; i++) {
-        a[i] = i;
-        b[i] = i * 2;
+    // Initialize data
+    int data[100];
+    for (int i = 0; i < 100; i++) {
+        data[i] = rand() % 100;
     }
 
-    #pragma acc parallel loop vector
+    // Create a vector of 10 elements
+    int vector[10];
     for (int i = 0; i < 10; i++) {
-        if (a[i] != b[i]) {
+        vector[i] = data[i];
+    }
+
+    // Use the vector in a loop
+    for (int i = 0; i < 10; i++) {
+        // Do something with the vector element
+        vector[i] = vector[i] * 2;
+    }
+
+    // Check that the vector elements have been updated
+    for (int i = 0; i < 10; i++) {
+        if (vector[i] != data[i] * 2) {
             err = 1;
             break;
         }
     }
-
-    free(a);
-    free(b);
 
     return err;
 }

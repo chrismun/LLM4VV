@@ -9,34 +9,25 @@ int test1(){
     // Create a data array
     int data[10];
     for (int i = 0; i < 10; i++) {
-        data[i] = i;
+        data[i] = rand() % 100;
     }
 
-    // Create a device array
-    int device_data[10];
-    #pragma acc enter data copyin(data)
-    #pragma acc enter data copyin(device_data)
-
-    // Launch a kernel to modify the device data
-    #pragma acc parallel loop
-    for (int i = 0; i < 10; i++) {
-        device_data[i] = data[i] + 1;
-    }
-
-    // Wait for the kernel to complete
+    // Create a wait directive
     #pragma acc wait
+    {
+        // Do some work on the data
+        for (int i = 0; i < 10; i++) {
+            data[i] += 1;
+        }
+    }
 
-    // Check the results
+    // Check that the data has been updated
     for (int i = 0; i < 10; i++) {
-        if (device_data[i] != data[i] + 1) {
+        if (data[i] != i + 1) {
             err = 1;
             break;
         }
     }
-
-    // Clean up
-    #pragma acc exit data delete(device_data)
-    #pragma acc exit data delete(data)
 
     return err;
 }

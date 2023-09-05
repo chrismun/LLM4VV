@@ -6,14 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a loop construct with the auto clause
+    int num_devices = acc_get_num_devices(acc_device_default);
+    int device_id = acc_get_device_id(acc_device_default);
+
+    // Create a random number of iterations for the loop
+    int num_iterations = rand() % 100;
+
+    // Create a loop with the auto clause
     #pragma acc loop auto
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < num_iterations; i++) {
         // Do some work
     }
 
-    // Check if the loop was executed on the device
-    if (acc_get_device_type() == acc_device_host) {
+    // Check that the loop was executed on the correct device
+    if (acc_get_device_id(acc_device_default) != device_id) {
         err = 1;
     }
 

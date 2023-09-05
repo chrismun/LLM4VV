@@ -6,42 +6,24 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a device array
-    int *dev_array;
-    acc_malloc(&dev_array, sizeof(int) * 10);
-
-    // Create a host array
-    int *host_array = (int *)malloc(sizeof(int) * 10);
-
-    // Initialize the host array with random values
-    for (int i = 0; i < 10; i++) {
-        host_array[i] = rand() % 100;
-    }
-
-    // Copy the host array to the device array
-    acc_memcpy(dev_array, host_array, sizeof(int) * 10);
-
-    // Create an attachment counter
-    int *attachment_counter = (int *)malloc(sizeof(int));
-    *attachment_counter = 0;
-
-    // Attach the device array to the attachment counter
-    acc_attach(dev_array, attachment_counter, sizeof(int));
+    // Create a new attachment counter
+    acc_attach_counter(0, 0, 0, 0, 0);
 
     // Increment the attachment counter
-    *attachment_counter = *attachment_counter + 1;
+    acc_attach_counter(0, 0, 0, 0, 1);
 
-    // Detach the device array from the attachment counter
-    acc_detach(dev_array, attachment_counter);
-
-    // Check if the attachment counter is still attached to the device array
-    if (acc_is_attached(dev_array, attachment_counter)) {
+    // Check if the attachment counter is equal to 1
+    if (acc_attach_counter(0, 0, 0, 0, 0) != 1) {
         err = 1;
     }
 
-    // Free the device array and host array
-    acc_free(dev_array);
-    free(host_array);
+    // Decrement the attachment counter
+    acc_attach_counter(0, 0, 0, 0, -1);
+
+    // Check if the attachment counter is equal to 0
+    if (acc_attach_counter(0, 0, 0, 0, 0) != 0) {
+        err = 1;
+    }
 
     return err;
 }

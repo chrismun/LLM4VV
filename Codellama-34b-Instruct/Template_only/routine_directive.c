@@ -6,8 +6,13 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    #pragma acc declare create(err)
-    {
+    #pragma acc routine
+    int foo(int x) {
+        return x * 2;
+    }
+
+    int result = foo(5);
+    if (result != 10) {
         err = 1;
     }
 

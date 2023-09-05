@@ -6,34 +6,34 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(10 * sizeof(int));
-    int *b = (int *)malloc(10 * sizeof(int));
+    int *a = (int *)acc_malloc(sizeof(int) * 10);
+    int *b = (int *)acc_malloc(sizeof(int) * 10);
 
-    #pragma acc parallel loop self(a[0:10])
+    // Initialize arrays
     for (int i = 0; i < 10; i++) {
         a[i] = i;
-    }
-
-    #pragma acc parallel loop self(b[0:10])
-    for (int i = 0; i < 10; i++) {
         b[i] = i;
     }
 
-    #pragma acc parallel loop self(a[0:10], b[0:10])
-    for (int i = 0; i < 10; i++) {
-        a[i] += b[i];
+    // Set the value of the first element of b to 10
+    acc_set(b, 10, 1);
+
+    // Check that the value of the first element of b is 10
+    if (b[0] != 10) {
+        err = 1;
     }
 
-    #pragma acc parallel loop self(a[0:10])
-    for (int i = 0; i < 10; i++) {
-        if (a[i] != i + i) {
-            err = 1;
-            break;
-        }
+    // Set the value of the first element of a to 20
+    acc_set(a, 20, 1);
+
+    // Check that the value of the first element of a is 20
+    if (a[0] != 20) {
+        err = 1;
     }
 
-    free(a);
-    free(b);
+    // Free memory
+    acc_free(a);
+    acc_free(b);
 
     return err;
 }

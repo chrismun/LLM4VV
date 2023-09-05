@@ -6,22 +6,21 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a data array with no_create clause
-    int data[10];
-    #pragma acc data no_create(data)
+    // Create a data region with the no_create clause
+    #pragma acc data no_create(a[0:n])
     {
-        // Initialize the data array
-        for (int i = 0; i < 10; i++) {
-            data[i] = i;
+        // Allocate memory for the data region
+        a = (int*)malloc(n*sizeof(int));
+
+        // Initialize the data region
+        for (int i = 0; i < n; i++) {
+            a[i] = i;
         }
     }
 
-    // Verify that the data array has not been created
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != i) {
-            err = 1;
-            break;
-        }
+    // Check that the data region has not been created
+    if (a == NULL) {
+        err = 1;
     }
 
     return err;

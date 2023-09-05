@@ -17,31 +17,25 @@ int test1(){
         arr[i] = rand() % 100;
     }
 
-    // Create a new device and copy the array to it
-    int dev = acc_get_device_num();
-    acc_set_device_num(dev);
-    acc_copyin(arr, num * sizeof(int));
-
-    // Create a new async queue and enqueue a kernel that adds 1 to each element in the array
-    acc_queue_t queue = acc_create_queue(dev);
-    acc_kernel_t kernel = acc_create_kernel(queue, "add_one", num * sizeof(int));
-    acc_enqueue_kernel(queue, kernel, arr, num * sizeof(int));
-
-    // Wait for the kernel to complete
-    acc_wait_queue(queue);
+    // Create a parallel region with the async clause
+    #pragma acc parallel async(arr)
+    {
+        // Perform some computation on the array
+        for (int i = 0; i < num; i++) {
+            arr[i] = arr[i] + 1;
+        }
+    }
 
     // Check that the array has been updated correctly
     for (int i = 0; i < num; i++) {
-        if (arr[i] != i + 1) {
+        if (arr[i] != arr[i] + 1) {
             err = 1;
             break;
         }
     }
 
-    // Clean up
-    acc_free(arr);
-    acc_delete_queue(queue);
-    acc_delete_kernel(kernel);
+    // Free the array
+    free(arr);
 
     return err;
 }

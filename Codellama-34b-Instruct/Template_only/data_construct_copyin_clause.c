@@ -6,13 +6,13 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(10 * sizeof(int));
-    int *b = (int *)malloc(10 * sizeof(int));
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
     #pragma acc data copyin(a[0:10])
     {
         #pragma acc parallel loop
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 10; i++) {
             a[i] = i;
         }
     }
@@ -20,7 +20,7 @@ int test1(){
     #pragma acc data copyin(b[0:10])
     {
         #pragma acc parallel loop
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 10; i++) {
             b[i] = i;
         }
     }
@@ -28,7 +28,7 @@ int test1(){
     #pragma acc data copyin(a[0:10], b[0:10])
     {
         #pragma acc parallel loop
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 10; i++) {
             a[i] = b[i];
         }
     }
@@ -36,9 +36,10 @@ int test1(){
     #pragma acc data copyin(a[0:10])
     {
         #pragma acc parallel loop
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 10; i++) {
             if (a[i] != b[i]) {
                 err = 1;
+                break;
             }
         }
     }

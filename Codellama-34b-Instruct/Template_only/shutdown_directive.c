@@ -6,23 +6,10 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Set the device number to a random value
-    int device_num = rand() % 10;
-
-    // Create an OpenACC device object
-    acc_device_t device;
-    acc_device_create(&device, device_num);
-
-    // Set the device number on the device object
-    acc_set_device_num(device, device_num);
-
-    // Verify that the device number was set correctly
-    if (acc_get_device_num(device) != device_num) {
+    #pragma acc shutdown
+    {
         err = 1;
     }
-
-    // Clean up the device object
-    acc_device_destroy(device);
 
     return err;
 }

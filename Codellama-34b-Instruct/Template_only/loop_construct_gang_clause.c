@@ -6,24 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a gang of threads
-    #pragma acc gang
-    {
-        // Create a loop construct
-        #pragma acc loop
-        for (int i = 0; i < 10; i++) {
-            // Do some work
-            #pragma acc parallel
-            {
-                // Do some work
-            }
+    // Initialize the gang clause
+    acc_init_gang(acc_get_num_gangs());
+
+    // Create a loop with the gang clause
+    for (int i = 0; i < 10; i++) {
+        // Check if the gang clause is working properly
+        if (acc_get_gang_id() != i) {
+            err = 1;
+            break;
         }
     }
 
-    // Check that the gang is working correctly
-    if (acc_get_num_gangs() != 1) {
-        err = 1;
-    }
+    // Clean up the gang clause
+    acc_finalize_gang();
 
     return err;
 }

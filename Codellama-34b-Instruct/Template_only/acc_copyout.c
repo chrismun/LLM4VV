@@ -6,29 +6,31 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *data = (int *)malloc(sizeof(int) * 10);
-    int *map = (int *)malloc(sizeof(int) * 10);
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
-    // Initialize data and map
-    for (int i = 0; i < 10; i++) {
-        data[i] = i;
-        map[i] = i;
+    #pragma acc data copy(a[0:10])
+    {
+        #pragma acc parallel loop
+        for (int i = 0; i < 10; i++) {
+            a[i] = i;
+        }
+
+        #pragma acc parallel loop
+        for (int i = 0; i < 10; i++) {
+            b[i] = a[i];
+        }
     }
 
-    // Map data to the device
-    acc_map_data(data, map, 10);
-
-    // Verify that the data has been mapped correctly
     for (int i = 0; i < 10; i++) {
-        if (data[i] != map[i]) {
+        if (a[i] != b[i]) {
             err = 1;
             break;
         }
     }
 
-    // Free memory
-    free(data);
-    free(map);
+    free(a);
+    free(b);
 
     return err;
 }

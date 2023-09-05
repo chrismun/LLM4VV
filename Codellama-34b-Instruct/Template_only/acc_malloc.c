@@ -13,7 +13,7 @@ int test1(){
     }
 
     // Initialize the memory on the device
-    acc_memcpy_to_device(dev_ptr, 1024, 0);
+    acc_memset(dev_ptr, 0, 1024);
 
     // Free the memory on the device
     acc_free(dev_ptr);

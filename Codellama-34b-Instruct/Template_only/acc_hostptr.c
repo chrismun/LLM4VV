@@ -7,39 +7,48 @@ int test1(){
     srand(SEED);
 
     // Create a host pointer to a data array
-    int *host_ptr = (int *)malloc(sizeof(int) * 10);
+    int *data = (int *)malloc(sizeof(int) * 10);
 
     // Initialize the data array with random values
     for (int i = 0; i < 10; i++) {
-        host_ptr[i] = rand();
+        data[i] = rand();
     }
 
     // Create an OpenACC region and copy the data array to the device
-    #pragma acc enter data copyin(host_ptr[:10])
+    #pragma acc enter data copyin(data[:10])
 
     // Create a device pointer to the data array
-    int *device_ptr = (int *)acc_malloc(sizeof(int) * 10);
+    int *dev_data = (int *)acc_malloc(sizeof(int) * 10);
 
     // Copy the data array from the host to the device
-    #pragma acc parallel loop present(device_ptr[:10])
+    #pragma acc parallel loop present(data[:10])
     for (int i = 0; i < 10; i++) {
-        device_ptr[i] = host_ptr[i];
+        dev_data[i] = data[i];
     }
 
-    // Verify that the data array has been copied correctly
-    #pragma acc parallel loop present(device_ptr[:10])
+    // Create a host pointer to the device data array
+    int *host_data = (int *)acc_malloc(sizeof(int) * 10);
+
+    // Copy the data array from the device to the host
+    #pragma acc parallel loop present(dev_data[:10])
     for (int i = 0; i < 10; i++) {
-        if (device_ptr[i] != host_ptr[i]) {
+        host_data[i] = dev_data[i];
+    }
+
+    // Check that the data array has been copied correctly
+    for (int i = 0; i < 10; i++) {
+        if (data[i] != host_data[i]) {
             err = 1;
             break;
         }
     }
 
     // Free the device memory
-    #pragma acc exit data delete(device_ptr[:10])
+    #pragma acc exit data delete(dev_data[:10])
 
     // Free the host memory
-    free(host_ptr);
+    free(data);
+    free(host_data);
 
     return err;
 }

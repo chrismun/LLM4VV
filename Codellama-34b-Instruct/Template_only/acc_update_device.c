@@ -6,29 +6,29 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *data = (int *)malloc(sizeof(int) * 10);
-    int *map = (int *)malloc(sizeof(int) * 10);
+    // Create a device array
+    int *device_array = (int *)acc_malloc(sizeof(int) * 10);
 
-    // Initialize data and map
+    // Initialize the device array with random values
     for (int i = 0; i < 10; i++) {
-        data[i] = i;
-        map[i] = i;
+        device_array[i] = rand();
     }
 
-    // Map data to the device
-    acc_map_data(data, map, 10);
-
-    // Verify that the data has been mapped correctly
+    // Update the device array with new values
     for (int i = 0; i < 10; i++) {
-        if (data[i] != map[i]) {
+        device_array[i] = i * 2;
+    }
+
+    // Verify that the device array has been updated correctly
+    for (int i = 0; i < 10; i++) {
+        if (device_array[i] != i * 2) {
             err = 1;
             break;
         }
     }
 
-    // Free memory
-    free(data);
-    free(map);
+    // Free the device array
+    acc_free(device_array);
 
     return err;
 }

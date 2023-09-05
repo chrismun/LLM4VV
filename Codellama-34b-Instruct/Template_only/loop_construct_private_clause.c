@@ -10,16 +10,22 @@ int test1(){
     int b[100];
     int c[100];
 
-    #pragma acc loop private(a, b, c)
+    // Initialize arrays
     for (int i = 0; i < 100; i++) {
         a[i] = i;
-        b[i] = i * 2;
-        c[i] = i * 3;
+        b[i] = i;
+        c[i] = i;
     }
 
+    // Use the private clause to make the arrays private to each thread
     #pragma acc loop private(a, b, c)
     for (int i = 0; i < 100; i++) {
-        if (a[i] != i || b[i] != i * 2 || c[i] != i * 3) {
+        a[i] = b[i] + c[i];
+    }
+
+    // Check that the arrays are still private to each thread
+    for (int i = 0; i < 100; i++) {
+        if (a[i] != b[i] + c[i]) {
             err = 1;
             break;
         }

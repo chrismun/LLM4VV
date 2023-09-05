@@ -6,42 +6,35 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int n = 100;
-    int m = 100;
-    int k = 100;
-    int i, j, k;
-    int a[n][m][k];
-    int b[n][m][k];
-    int c[n][m][k];
+    int num_loops = 10;
+    int num_iterations = 100;
+    int num_threads = 4;
 
-    #pragma acc parallel loop collapse(2)
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < m; j++) {
-            for (k = 0; k < k; k++) {
-                a[i][j][k] = i + j + k;
-                b[i][j][k] = i + j + k;
-                c[i][j][k] = i + j + k;
-            }
+    // Initialize data
+    int* data = (int*)malloc(num_loops * num_iterations * sizeof(int));
+    for (int i = 0; i < num_loops * num_iterations; i++) {
+        data[i] = i;
+    }
+
+    // Create OpenACC data environment
+    acc_create(data, num_loops * num_iterations * sizeof(int));
+
+    // Create OpenACC loop construct
+    acc_loop(num_loops, num_iterations, num_threads, data);
+
+    // Collapse loop construct
+    acc_collapse(num_loops, num_iterations, num_threads, data);
+
+    // Verify that the data has been updated correctly
+    for (int i = 0; i < num_loops * num_iterations; i++) {
+        if (data[i] != i) {
+            err = 1;
+            break;
         }
     }
 
-    #pragma acc parallel loop collapse(2)
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < m; j++) {
-            for (k = 0; k < k; k++) {
-                a[i][j][k] += b[i][j][k] + c[i][j][k];
-            }
-        }
-    }
-
-    #pragma acc parallel loop collapse(2)
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < m; j++) {
-            for (k = 0; k < k; k++) {
-                a[i][j][k] += b[i][j][k] + c[i][j][k];
-            }
-        }
-    }
+    // Clean up
+    acc_delete(data);
 
     return err;
 }

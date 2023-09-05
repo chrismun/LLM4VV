@@ -7,23 +7,20 @@ int test1(){
     srand(SEED);
 
     // Create a reference counter
-    acc_reference_counter_t ref_counter;
-    acc_reference_counter_init(&ref_counter);
+    acc_ref_counter_t ref_counter;
+    acc_ref_counter_init(&ref_counter);
 
     // Increment the reference counter
-    acc_reference_counter_increment(&ref_counter);
+    acc_ref_counter_inc(&ref_counter);
 
     // Decrement the reference counter
-    acc_reference_counter_decrement(&ref_counter);
+    acc_ref_counter_dec(&ref_counter);
 
     // Check if the reference counter is zero
-    if (acc_reference_counter_is_zero(&ref_counter)) {
-        // Reference counter is zero, return 1
+    if (acc_ref_counter_get(&ref_counter) == 0) {
+        // The reference counter is zero, so the feature is not working properly
         err = 1;
     }
-
-    // Clean up the reference counter
-    acc_reference_counter_destroy(&ref_counter);
 
     return err;
 }

@@ -10,17 +10,12 @@ int test1(){
     int b = 2;
     int c = 3;
 
-    #pragma acc parallel
+    #pragma acc compute firstprivate(a, b, c)
     {
-        #pragma acc loop
-        for (int i = 0; i < 10; ++i) {
-            a = a + b;
-            b = b + c;
-            c = c + a;
-        }
+        a = a + b + c;
     }
 
-    if (a != 11 || b != 12 || c != 13) {
+    if (a != 6){
         err = 1;
     }
 

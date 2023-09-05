@@ -6,29 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(10 * sizeof(int));
-    int *b = (int *)malloc(10 * sizeof(int));
-
-    #pragma acc data create(a[0:10], b[0:10])
-    {
-        #pragma acc parallel loop
-        for (int i = 0; i < 10; i++) {
-            a[i] = i;
-            b[i] = i;
-        }
+    // Create a data array
+    int data[10];
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
     }
 
-    #pragma acc update self(a[0:10], b[0:10])
+    // Copy the data array to the device
+    acc_copyin(data, 10);
 
+    // Verify that the data has been copied correctly
     for (int i = 0; i < 10; i++) {
-        if (a[i] != i || b[i] != i) {
+        if (data[i] != i) {
             err = 1;
             break;
         }
     }
-
-    free(a);
-    free(b);
 
     return err;
 }

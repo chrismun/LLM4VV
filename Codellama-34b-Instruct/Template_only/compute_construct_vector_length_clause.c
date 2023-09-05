@@ -6,32 +6,32 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize data
-    int data[100];
-    for (int i = 0; i < 100; i++) {
-        data[i] = i;
-    }
+    int vector_length = 16;
+    int num_vectors = 10;
+    int num_elements = vector_length * num_vectors;
 
-    // Set the vector length to 10
-    int vector_length = 10;
+    int* data = (int*)malloc(num_elements * sizeof(int));
+    int* result = (int*)malloc(num_elements * sizeof(int));
 
-    // Create a parallel region with the vector length set to 10
-    #pragma acc parallel num_gangs(1) vector_length(vector_length)
-    {
-        // Loop over the data and perform a reduction
-        #pragma acc loop reduction(+:data[:10])
-        for (int i = 0; i < 100; i++) {
-            data[i] += data[i];
+    #pragma acc parallel loop vector_length(vector_length)
+    for (int i = 0; i < num_vectors; i++) {
+        for (int j = 0; j < vector_length; j++) {
+            result[i * vector_length + j] = data[i * vector_length + j] + 1;
         }
     }
 
-    // Check the results
-    for (int i = 0; i < 100; i++) {
-        if (data[i] != i * 2) {
-            err = 1;
-            break;
+    #pragma acc parallel loop vector_length(vector_length)
+    for (int i = 0; i < num_vectors; i++) {
+        for (int j = 0; j < vector_length; j++) {
+            if (result[i * vector_length + j] != data[i * vector_length + j] + 1) {
+                err = 1;
+                break;
+            }
         }
     }
+
+    free(data);
+    free(result);
 
     return err;
 }

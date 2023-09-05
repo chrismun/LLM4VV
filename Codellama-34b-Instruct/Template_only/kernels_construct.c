@@ -16,16 +16,19 @@ int test1(){
     acc_kernel kernel;
     kernel.name = "my_kernel";
     kernel.num_args = 1;
-    kernel.args[0].type = ACC_ARG_TYPE_INT;
-    kernel.args[0].value = data;
+    kernel.args[0] = data;
+    kernel.num_threads = 10;
+    kernel.num_blocks = 1;
+    kernel.shared_memory_size = 0;
+    kernel.grid_size = 10;
+    kernel.block_size = 1;
+    kernel.device_type = ACC_DEVICE_TYPE_GPU;
+    kernel.device_id = 0;
 
     // Launch the kernel
-    acc_launch(kernel);
+    acc_launch_kernel(kernel);
 
-    // Wait for the kernel to finish
-    acc_wait(kernel);
-
-    // Check the results
+    // Verify the results
     for (int i = 0; i < 10; i++) {
         if (data[i] != i) {
             err = 1;
@@ -33,7 +36,7 @@ int test1(){
         }
     }
 
-    // Free the data
+    // Free data
     free(data);
 
     return err;

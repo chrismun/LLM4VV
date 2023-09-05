@@ -6,27 +6,30 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize data
-    int data[10];
-    for (int i = 0; i < 10; i++) {
-        data[i] = rand() % 100;
-    }
+    // Create a random number between 1 and 10
+    int num = rand() % 10 + 1;
 
-    // Create a parallel region with a combined construct
-    #pragma acc parallel loop
-    for (int i = 0; i < 10; i++) {
-        #pragma acc loop
-        for (int j = 0; j < 10; j++) {
-            data[i] += data[j];
+    // Create a parallel region with the num threads
+    #pragma acc parallel num_threads(num)
+    {
+        // Create a data region with the num threads
+        #pragma acc data num_threads(num)
+        {
+            // Create a loop with the num threads
+            #pragma acc loop num_threads(num)
+            for (int i = 0; i < num; i++) {
+                // Do some work
+                #pragma acc loop num_threads(num)
+                for (int j = 0; j < num; j++) {
+                    // Do some work
+                }
+            }
         }
     }
 
-    // Check the results
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != 100) {
-            err = 1;
-            break;
-        }
+    // Check if the data region was executed correctly
+    if (acc_get_num_threads() != num) {
+        err = 1;
     }
 
     return err;

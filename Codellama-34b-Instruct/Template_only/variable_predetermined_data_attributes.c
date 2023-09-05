@@ -12,19 +12,26 @@ int test1(){
         arr[i] = rand() % 100;
     }
 
-    // Create a copy of the array on the device
+    // Create a device array and copy the host array to it
     int* dev_arr = (int*)acc_malloc(sizeof(int) * 10);
-    acc_memcpy(dev_arr, arr, sizeof(int) * 10);
+    acc_memcpy_to_device(dev_arr, arr, sizeof(int) * 10);
 
-    // Free the device memory
-    acc_free(dev_arr);
+    // Create a predicate variable and set it to true
+    int predicate = 1;
 
-    // Check that the device memory has been freed
-    if (acc_is_present(dev_arr)) {
-        err = 1;
+    // Use the predicate variable to determine which elements to copy to the device
+    acc_copy_to_device(dev_arr, arr, sizeof(int) * 10, predicate);
+
+    // Check that the elements that were not copied to the device are still on the host
+    for (int i = 0; i < 10; i++) {
+        if (arr[i] != dev_arr[i]) {
+            err = 1;
+            break;
+        }
     }
 
-    // Free the host memory
+    // Free the device array and host array
+    acc_free(dev_arr);
     free(arr);
 
     return err;

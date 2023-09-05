@@ -6,15 +6,16 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a loop with a random number of iterations
-    int num_iterations = rand() % 100;
-    for (int i = 0; i < num_iterations; i++) {
-        // Do some work
-    }
-
-    // Check if the loop was executed correctly
-    if (num_iterations != 0) {
-        err = 1;
+    // Create a loop construct with independent clause
+    #pragma acc loop independent
+    for (int i = 0; i < 10; i++) {
+        // Do some computation
+        int result = rand() % 10;
+        // Check if the result is correct
+        if (result != i) {
+            err = 1;
+            break;
+        }
     }
 
     return err;

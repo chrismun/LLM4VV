@@ -7,24 +7,18 @@ int test1(){
     srand(SEED);
 
     // Create a device pointer
-    int *device_ptr = (int *)acc_malloc(sizeof(int));
+    int *device_ptr = acc_deviceptr(malloc(sizeof(int)));
 
     // Set the device pointer to a random value
     *device_ptr = rand();
 
-    // Create a host pointer
-    int *host_ptr = (int *)malloc(sizeof(int));
-
-    // Copy the device pointer to the host pointer
-    acc_memcpy(host_ptr, device_ptr, sizeof(int));
-
-    // Check if the host pointer contains the same value as the device pointer
-    if (*host_ptr != *device_ptr){
+    // Check that the device pointer is not null
+    if (device_ptr == NULL) {
         err = 1;
     }
 
     // Free the device pointer
-    acc_free(device_ptr);
+    free(device_ptr);
 
     return err;
 }

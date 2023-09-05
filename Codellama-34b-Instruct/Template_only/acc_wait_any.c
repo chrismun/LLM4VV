@@ -10,30 +10,34 @@ int test1(){
     int *dev_array;
     acc_malloc(&dev_array, sizeof(int) * 10);
 
-    // Create a host array
-    int *host_array = (int *)malloc(sizeof(int) * 10);
-
-    // Initialize the host array
+    // Initialize the device array with random values
     for (int i = 0; i < 10; i++) {
-        host_array[i] = i;
+        dev_array[i] = rand() % 100;
     }
 
-    // Copy the host array to the device array
+    // Create a host array
+    int *host_array = (int *)acc_malloc(sizeof(int) * 10);
+
+    // Copy the device array to the host array
+    acc_memcpy(host_array, dev_array, sizeof(int) * 10);
+
+    // Wait for the device array to be ready
+    acc_wait(dev_array, 10);
+
+    // Check if the device array is ready
+    if (acc_is_ready(dev_array, 10) == 0) {
+        // The device array is not ready, so we need to wait for it to be ready
+        acc_wait(dev_array, 10);
+    }
+
+    // Copy the host array back to the device array
     acc_memcpy(dev_array, host_array, sizeof(int) * 10);
-
-    // Create a wait directive
-    acc_wait_any(dev_array, 10);
-
-    // Check if the wait directive has completed
-    if (acc_wait_any(dev_array, 10) != 0) {
-        err = 1;
-    }
 
     // Free the device array
     acc_free(dev_array);
 
     // Free the host array
-    free(host_array);
+    acc_free(host_array);
 
     return err;
 }

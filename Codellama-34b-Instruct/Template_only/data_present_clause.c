@@ -6,22 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a data region
-    #pragma acc data
+    // Create a data region with the present clause
+    #pragma acc data present(a)
     {
-        // Create a variable to store the data
-        int data[10];
-
         // Initialize the data
+        int a[10];
         for (int i = 0; i < 10; i++) {
-            data[i] = i;
+            a[i] = i;
         }
 
         // Verify that the data is present on the device
-        #pragma acc host_data use_device(data)
+        #pragma acc host_data use_device(a)
         {
             for (int i = 0; i < 10; i++) {
-                if (data[i] != i) {
+                if (a[i] != i) {
                     err = 1;
                     break;
                 }

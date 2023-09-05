@@ -6,27 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a data array
-    int data[10];
-
-    // Initialize the data array with random values
-    for (int i = 0; i < 10; i++) {
-        data[i] = rand();
+    // Create a data region with the enter data directive
+    #pragma acc enter data copyin(array[0:N])
+    {
+        // Initialize the array with random values
+        for (int i = 0; i < N; i++) {
+            array[i] = rand();
+        }
     }
 
-    // Enter the data array into the OpenACC runtime
-    acc_enter_data(data, 10, 10);
-
-    // Verify that the data array is now accessible on the device
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != acc_get_data(i)) {
+    // Check that the array has been copied correctly
+    for (int i = 0; i < N; i++) {
+        if (array[i] != rand()) {
             err = 1;
             break;
         }
     }
-
-    // Exit the data array from the OpenACC runtime
-    acc_exit_data(data, 10, 10);
 
     return err;
 }

@@ -6,26 +6,23 @@ int test1(){
     int err = 0;
     srand(SEED);
 
+    // Initialize arrays
     int a[100];
     int b[100];
-    int c[100];
-
-    // Initialize arrays
     for (int i = 0; i < 100; i++) {
         a[i] = i;
         b[i] = i;
-        c[i] = 0;
     }
 
-    // Perform reduction
-    #pragma acc parallel loop reduction(+:c)
+    // Perform reduction on arrays
+    #pragma acc parallel loop reduction(+:a[:100])
     for (int i = 0; i < 100; i++) {
-        c[i] += a[i] + b[i];
+        a[i] += b[i];
     }
 
     // Check results
     for (int i = 0; i < 100; i++) {
-        if (c[i] != (a[i] + b[i])) {
+        if (a[i] != (i + i)) {
             err = 1;
             break;
         }

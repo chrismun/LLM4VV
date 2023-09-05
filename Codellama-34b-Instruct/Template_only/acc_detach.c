@@ -6,29 +6,28 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(sizeof(int) * 10);
-    int *b = (int *)malloc(sizeof(int) * 10);
+    // Create a device array
+    int *dev_array;
+    acc_malloc(&dev_array, sizeof(int) * 10);
 
-    #pragma acc data copy(a[0:10], b[0:10])
-    {
-        #pragma acc update device(a[0:10])
-        #pragma acc update self(b[0:10])
-
-        for (int i = 0; i < 10; i++) {
-            a[i] = i;
-            b[i] = i;
-        }
+    // Initialize the device array with random values
+    for (int i = 0; i < 10; i++) {
+        dev_array[i] = rand();
     }
 
+    // Detach the device array from the host
+    acc_detach(dev_array);
+
+    // Check if the device array is still accessible from the host
     for (int i = 0; i < 10; i++) {
-        if (a[i] != i || b[i] != i) {
+        if (dev_array[i] != rand()) {
             err = 1;
             break;
         }
     }
 
-    free(a);
-    free(b);
+    // Free the device array
+    acc_free(dev_array);
 
     return err;
 }

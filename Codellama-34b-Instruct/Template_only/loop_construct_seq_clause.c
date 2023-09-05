@@ -6,27 +6,19 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(10 * sizeof(int));
-    int *b = (int *)malloc(10 * sizeof(int));
-    int *c = (int *)malloc(10 * sizeof(int));
+    // Create a random number between 1 and 10
+    int num = rand() % 10 + 1;
 
-    #pragma acc parallel loop seq
-    for (int i = 0; i < 10; i++) {
-        a[i] = i;
-        b[i] = i;
-        c[i] = a[i] + b[i];
+    // Create a loop that iterates over the range [1, num]
+    for (int i = 1; i <= num; i++) {
+        // Do some work
+        printf("Iteration %d\n", i);
     }
 
-    for (int i = 0; i < 10; i++) {
-        if (c[i] != a[i] + b[i]) {
-            err = 1;
-            break;
-        }
+    // Check if the loop executed correctly
+    if (num != i) {
+        err = 1;
     }
-
-    free(a);
-    free(b);
-    free(c);
 
     return err;
 }

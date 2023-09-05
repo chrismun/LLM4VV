@@ -17,24 +17,22 @@ int test1(){
         data[i] = rand();
     }
 
-    // Create a parallel region with the default async mode
-    #pragma acc parallel
-    {
-        // Create a loop to iterate over the data array
-        #pragma acc loop
-        for (int i = 0; i < 10; i++) {
-            // Perform some computation on the data array
-            data[i] = data[i] + 1;
-        }
-    }
+    // Create a host array
+    int host[10];
 
-    // Check the results of the computation
+    // Copy the data array to the host array
+    acc_copy(host, data, 10);
+
+    // Check if the data array is equal to the host array
     for (int i = 0; i < 10; i++) {
-        if (data[i] != i + 1) {
+        if (data[i] != host[i]) {
             err = 1;
             break;
         }
     }
+
+    // Set the default async mode to false
+    acc_set_default_async(false);
 
     return err;
 }

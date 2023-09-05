@@ -6,29 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *data = (int *)malloc(sizeof(int) * 10);
-    int *map = (int *)malloc(sizeof(int) * 10);
-
-    // Initialize data and map
-    for (int i = 0; i < 10; i++) {
+    // Initialize data
+    int data[100];
+    for (int i = 0; i < 100; i++) {
         data[i] = i;
-        map[i] = i;
     }
 
-    // Map data to the device
-    acc_map_data(data, map, 10);
+    // Update data using acc_update_self
+    #pragma acc update self(data[0:100])
 
-    // Verify that the data has been mapped correctly
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != map[i]) {
+    // Check that data has been updated
+    for (int i = 0; i < 100; i++) {
+        if (data[i] != i + 1) {
             err = 1;
             break;
         }
     }
-
-    // Free memory
-    free(data);
-    free(map);
 
     return err;
 }

@@ -6,25 +6,30 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(10 * sizeof(int));
-    int *b = (int *)malloc(10 * sizeof(int));
+    int *a = (int *)acc_malloc(sizeof(int) * N);
+    int *b = (int *)acc_malloc(sizeof(int) * N);
 
-    #pragma acc data copy(a[0:10], b[0:10])
+    #pragma acc host_data use_device(a, b)
     {
-        #pragma acc parallel loop
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < N; i++) {
             a[i] = i;
-        }
-
-        #pragma acc parallel loop
-        for (int i = 0; i < 10; i++) {
-            b[i] = a[i];
+            b[i] = i;
         }
     }
 
-    #pragma acc wait
+    #pragma acc parallel loop device(a, b)
+    for (int i = 0; i < N; i++) {
+        a[i] += b[i];
+    }
+
+    #pragma acc parallel loop device(a, b)
+    for (int i = 0; i < N; i++) {
+        b[i] += a[i];
+    }
+
+    #pragma acc host_data use_device(a, b)
     {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < N; i++) {
             if (a[i] != b[i]) {
                 err = 1;
                 break;
@@ -32,8 +37,8 @@ int test1(){
         }
     }
 
-    free(a);
-    free(b);
+    acc_free(a);
+    acc_free(b);
 
     return err;
 }

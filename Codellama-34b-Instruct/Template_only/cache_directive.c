@@ -6,37 +6,43 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a random array of integers
-    int *arr = (int *)malloc(sizeof(int) * 10);
-    for (int i = 0; i < 10; i++) {
-        arr[i] = rand();
-    }
+    #pragma acc cache(device)
+    {
+        int *a = (int *)malloc(sizeof(int) * 10);
+        int *b = (int *)malloc(sizeof(int) * 10);
+        int *c = (int *)malloc(sizeof(int) * 10);
 
-    // Create a device array and copy the host array to it
-    int *dev_arr;
-    acc_create(&dev_arr, arr, sizeof(int) * 10);
+        #pragma acc data copy(a[0:10], b[0:10], c[0:10])
+        {
+            for (int i = 0; i < 10; i++) {
+                a[i] = i;
+                b[i] = i * 2;
+                c[i] = a[i] + b[i];
+            }
+        }
 
-    // Create a cache directive for the device array
-    acc_cache(dev_arr, sizeof(int) * 10, ACC_CACHE_READ_WRITE);
+        #pragma acc cache(a[0:10], b[0:10], c[0:10])
+        {
+            for (int i = 0; i < 10; i++) {
+                a[i] = i * 2;
+                b[i] = i * 3;
+                c[i] = a[i] + b[i];
+            }
+        }
 
-    // Modify the device array
-    for (int i = 0; i < 10; i++) {
-        dev_arr[i] = dev_arr[i] + 1;
-    }
-
-    // Synchronize the device array with the host array
-    acc_sync(dev_arr, sizeof(int) * 10, ACC_SYNC_READ_WRITE);
-
-    // Check if the host array has been modified
-    for (int i = 0; i < 10; i++) {
-        if (arr[i] != dev_arr[i]) {
-            err = 1;
-            break;
+        #pragma acc cache(a[0:10], b[0:10], c[0:10])
+        {
+            for (int i = 0; i < 10; i++) {
+                a[i] = i * 3;
+                b[i] = i * 4;
+                c[i] = a[i] + b[i];
+            }
         }
     }
 
-    // Free the device array
-    acc_free(dev_arr);
+    free(a);
+    free(b);
+    free(c);
 
     return err;
 }

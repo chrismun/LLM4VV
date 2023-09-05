@@ -6,24 +6,21 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(sizeof(int));
-    int *b = (int *)malloc(sizeof(int));
-    int *c = (int *)malloc(sizeof(int));
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
     #pragma acc atomic
     {
         a[0] = 1;
         b[0] = 2;
-        c[0] = 3;
     }
 
-    if (a[0] != 1 || b[0] != 2 || c[0] != 3){
+    if (a[0] != 1 || b[0] != 2){
         err = 1;
     }
 
     free(a);
     free(b);
-    free(c);
 
     return err;
 }

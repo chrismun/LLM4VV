@@ -6,7 +6,7 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int num_devices = acc_get_num_devices(acc_device_default);
+    int num_devices = acc_get_num_devices(acc_device_host);
     if (num_devices != 1) {
         err = 1;
     }

@@ -6,24 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize data
-    int data[10];
-    for (int i = 0; i < 10; i++) {
-        data[i] = i;
-    }
+    // Initialize the device type
+    int device_type = 0;
 
-    // Create a device_type clause
-    #pragma acc loop device_type(data)
+    // Create a loop construct with the device_type clause
+    #pragma acc loop device_type(device_type)
     for (int i = 0; i < 10; i++) {
-        data[i] = i * 2;
-    }
-
-    // Check that the data has been updated on the device
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != i * 2) {
-            err = 1;
-            break;
+        // Do some work on the device
+        #pragma acc parallel loop device_type(device_type)
+        for (int j = 0; j < 10; j++) {
+            // Do some work on the device
         }
+    }
+
+    // Check if the device type is correct
+    if (device_type != 0) {
+        err = 1;
     }
 
     return err;

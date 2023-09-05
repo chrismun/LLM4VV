@@ -6,10 +6,17 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    #pragma acc enter data copyin(array[0:n])
-    #pragma acc exit data delete(array[0:n])
+    // Create a new device
+    acc_device_t device = acc_get_device(acc_device_default);
 
-    if (array[0] != 0){
+    // Allocate memory on the device
+    void *device_ptr = acc_malloc(device, 1024);
+
+    // Delete the memory on the device
+    acc_delete(device_ptr);
+
+    // Check that the memory has been deleted
+    if (acc_is_present(device_ptr) != 0) {
         err = 1;
     }
 

@@ -6,37 +6,26 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)acc_malloc(sizeof(int) * 10);
-    int *b = (int *)acc_malloc(sizeof(int) * 10);
+    int *data;
+    int *deviceptr;
+
+    // Allocate memory on the device
+    deviceptr = (int *)acc_malloc(sizeof(int));
 
     // Initialize the data on the host
-    for (int i = 0; i < 10; i++) {
-        a[i] = i;
-        b[i] = i;
-    }
+    data = (int *)malloc(sizeof(int));
+    data[0] = 1;
 
     // Copy the data to the device
-    acc_memcpy_to_device(a, b, sizeof(int) * 10);
+    acc_memcpy_to_device(deviceptr, data, sizeof(int));
 
-    // Use the data on the device
-    for (int i = 0; i < 10; i++) {
-        a[i] += b[i];
+    // Verify that the data has been copied correctly
+    if (deviceptr[0] != data[0]){
+        err = 1;
     }
 
-    // Copy the data back to the host
-    acc_memcpy_from_device(a, b, sizeof(int) * 10);
-
-    // Verify the results
-    for (int i = 0; i < 10; i++) {
-        if (a[i] != 2 * i) {
-            err = 1;
-            break;
-        }
-    }
-
-    // Free the device memory
-    acc_free(a);
-    acc_free(b);
+    // Free the memory on the device
+    acc_free(deviceptr);
 
     return err;
 }

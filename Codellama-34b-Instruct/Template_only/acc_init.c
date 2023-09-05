@@ -6,26 +6,26 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize the OpenACC runtime
-    acc_init();
+    // Initialize the device
+    acc_init(acc_device_default);
 
-    // Create a new OpenACC device
-    acc_device_t device = acc_create_device(ACC_DEVICE_TYPE_GPU);
+    // Create a data array on the device
+    int *data;
+    acc_malloc(data, sizeof(int) * 10);
 
-    // Set the device as the current device
-    acc_set_device(device);
+    // Initialize the data array on the device
+    acc_init(data, sizeof(int) * 10);
 
-    // Allocate memory on the device
-    acc_malloc(1024);
+    // Verify that the data array is initialized correctly
+    for (int i = 0; i < 10; i++) {
+        if (data[i] != 0) {
+            err = 1;
+            break;
+        }
+    }
 
-    // Initialize the memory on the device
-    acc_init_memory(device, 1024);
-
-    // Free the memory on the device
-    acc_free(device);
-
-    // Destroy the device
-    acc_destroy_device(device);
+    // Free the data array
+    acc_free(data);
 
     return err;
 }

@@ -10,21 +10,20 @@ int test1(){
     int b[100];
     int c[100];
 
-    #pragma acc parallel loop reduction(+:a[:100])
+    // Initialize arrays
     for (int i = 0; i < 100; i++) {
         a[i] = i;
-    }
-
-    #pragma acc parallel loop reduction(+:b[:100])
-    for (int i = 0; i < 100; i++) {
         b[i] = i;
+        c[i] = 0;
     }
 
-    #pragma acc parallel loop reduction(+:c[:100])
+    // Perform reduction
+    #pragma acc parallel loop reduction(+:c[0:100])
     for (int i = 0; i < 100; i++) {
-        c[i] = a[i] + b[i];
+        c[i] += a[i] + b[i];
     }
 
+    // Check result
     for (int i = 0; i < 100; i++) {
         if (c[i] != a[i] + b[i]) {
             err = 1;

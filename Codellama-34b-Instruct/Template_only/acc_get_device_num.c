@@ -6,8 +6,11 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int device_num = acc_get_device_num();
-    if (device_num < 0 || device_num >= acc_get_num_devices()){
+    // Get the number of devices
+    int num_devices = acc_get_num_devices();
+
+    // Check if the number of devices is greater than 0
+    if (num_devices <= 0) {
         err = 1;
     }
 

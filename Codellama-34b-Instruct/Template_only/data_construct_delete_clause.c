@@ -6,29 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(10 * sizeof(int));
-    int *b = (int *)malloc(10 * sizeof(int));
-
-    #pragma acc data copy(a[0:10], b[0:10])
-    {
-        #pragma acc parallel loop
-        for (int i = 0; i < 10; i++) {
-            a[i] = i;
-            b[i] = i;
-        }
-
-        #pragma acc delete(a[0:10], b[0:10])
+    // Create a data array
+    int data[10];
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
     }
 
+    // Create a delete clause
+    #pragma acc delete(data)
+
+    // Check that the data array has been deleted
     for (int i = 0; i < 10; i++) {
-        if (a[i] != i || b[i] != i) {
+        if (data[i] != 0) {
             err = 1;
             break;
         }
     }
-
-    free(a);
-    free(b);
 
     return err;
 }

@@ -6,40 +6,28 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create two arrays on the host
-    int *host_array1 = (int *)malloc(sizeof(int) * 10);
-    int *host_array2 = (int *)malloc(sizeof(int) * 10);
-
-    // Initialize the arrays with random values
+    // Create two arrays of random values
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
     for (int i = 0; i < 10; i++) {
-        host_array1[i] = rand();
-        host_array2[i] = rand();
+        a[i] = rand();
+        b[i] = rand();
     }
 
-    // Copy the arrays to the device
-    int *device_array1 = (int *)acc_malloc(sizeof(int) * 10);
-    int *device_array2 = (int *)acc_malloc(sizeof(int) * 10);
-    acc_memcpy(device_array1, host_array1, sizeof(int) * 10);
-    acc_memcpy(device_array2, host_array2, sizeof(int) * 10);
+    // Copy the values from a to b using the OpenACC memcpy directive
+    #pragma acc memcpy(b, a, 10)
 
-    // Perform a device-to-device copy
-    acc_memcpy(device_array1, device_array2, sizeof(int) * 10);
-
-    // Copy the arrays back to the host
-    acc_memcpy(host_array1, device_array1, sizeof(int) * 10);
-    acc_memcpy(host_array2, device_array2, sizeof(int) * 10);
-
-    // Check that the arrays are equal
+    // Check that the values in b are the same as the values in a
     for (int i = 0; i < 10; i++) {
-        if (host_array1[i] != host_array2[i]) {
+        if (b[i] != a[i]) {
             err = 1;
             break;
         }
     }
 
-    // Free the device memory
-    acc_free(device_array1);
-    acc_free(device_array2);
+    // Free the memory allocated for the arrays
+    free(a);
+    free(b);
 
     return err;
 }

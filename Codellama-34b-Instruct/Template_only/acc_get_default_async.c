@@ -6,14 +6,14 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Set the default async value to 1
-    acc_set_default_async(1);
+    // Set the default async mode to async
+    acc_set_default_async(ACC_ASYNC);
 
-    // Create a data region with the default async value
-    acc_data_region_t data_region = acc_create_data_region(acc_get_default_async());
+    // Create a data region with the default async mode
+    acc_data_region_t data_region = acc_create_data_region(ACC_DEFAULT_ASYNC);
 
-    // Verify that the default async value is set correctly
-    if (data_region->async != 1) {
+    // Verify that the data region is created with the default async mode
+    if (data_region->async != ACC_ASYNC) {
         err = 1;
     }
 

@@ -6,29 +6,31 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *data = (int *)malloc(sizeof(int) * 10);
-    int *map = (int *)malloc(sizeof(int) * 10);
+    // Declare a device-resident variable
+    int *device_resident_var;
 
-    // Initialize data and map
+    // Allocate memory on the device for the variable
+    device_resident_var = (int *)acc_malloc(sizeof(int));
+
+    // Initialize the variable on the device
+    *device_resident_var = 1;
+
+    // Use the variable in a kernel
+    #pragma acc parallel loop device_resident(device_resident_var)
     for (int i = 0; i < 10; i++) {
-        data[i] = i;
-        map[i] = i;
+        device_resident_var[i] = i;
     }
 
-    // Map data to the device
-    acc_map_data(data, map, 10);
-
-    // Verify that the data has been mapped correctly
+    // Check that the variable was updated correctly
     for (int i = 0; i < 10; i++) {
-        if (data[i] != map[i]) {
+        if (device_resident_var[i] != i) {
             err = 1;
             break;
         }
     }
 
-    // Free memory
-    free(data);
-    free(map);
+    // Free the memory on the device
+    acc_free(device_resident_var);
 
     return err;
 }

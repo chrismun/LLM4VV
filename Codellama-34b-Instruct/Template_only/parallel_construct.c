@@ -11,21 +11,12 @@ int test1(){
     {
         // Create a loop with 10 iterations
         for (int i = 0; i < 10; i++) {
-            // Create a data region with 4 elements
-            #pragma acc data copy(i)
-            {
-                // Create a loop with 4 iterations
-                for (int j = 0; j < 4; j++) {
-                    // Perform some computation
-                    i += j;
-                }
-            }
-        }
-    }
+            // Create a random number between 0 and 10
+            int random_number = rand() % 10;
 
-    // Check that the data region was executed correctly
-    if (i != 10) {
-        err = 1;
+            // Print the random number to the console
+            printf("Random number: %d\n", random_number);
+        }
     }
 
     return err;

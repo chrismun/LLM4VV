@@ -10,16 +10,16 @@ int test1(){
     int result;
 
     // Use the link clause to link the variable to a specific device
-    #pragma acc declare link(result) device(device_type)
+    #pragma acc declare link(result) device(gpu)
 
-    // Use the device to perform some computation
-    #pragma acc parallel loop device(device_type)
-    for (int i = 0; i < N; i++) {
+    // Perform some computation on the device
+    #pragma acc parallel loop device(gpu)
+    for (int i = 0; i < 100; i++) {
         result += i;
     }
 
-    // Check the result
-    if (result != N * (N - 1) / 2) {
+    // Check that the result is correct
+    if (result != 4950) {
         err = 1;
     }
 

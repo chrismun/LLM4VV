@@ -6,28 +6,45 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a device array
-    int *dev_array = (int *)acc_malloc(sizeof(int) * 10);
+    // Create a new OpenACC context
+    acc_context_t context = acc_create_context();
 
-    // Set the device array to a random value
-    for (int i = 0; i < 10; i++) {
-        dev_array[i] = rand();
+    // Set the OpenACC device to the current device
+    acc_set_device(context, acc_get_device());
+
+    // Get the OpenACC device properties
+    acc_device_properties_t properties;
+    acc_get_device_properties(context, &properties);
+
+    // Check if the device supports the OpenACC runtime
+    if (!properties.runtime_support) {
+        err = 1;
     }
 
-    // Get the device array's properties
-    acc_get_property(dev_array, ACC_PROPERTY_DEVICE_TYPE, &err);
-    acc_get_property(dev_array, ACC_PROPERTY_DEVICE_ID, &err);
-    acc_get_property(dev_array, ACC_PROPERTY_DEVICE_NAME, &err);
-
-    // Check that the properties are correct
-    if (err != 0) {
-        return 1;
+    // Check if the device supports the OpenACC data construct
+    if (!properties.data_support) {
+        err = 1;
     }
 
-    // Free the device array
-    acc_free(dev_array);
+    // Check if the device supports the OpenACC executable-data construct
+    if (!properties.executable_data_support) {
+        err = 1;
+    }
 
-    return 0;
+    // Check if the device supports the OpenACC construct-independent construct
+    if (!properties.construct_independent_support) {
+        err = 1;
+    }
+
+    // Check if the device supports the OpenACC V:2.0-2.7 version
+    if (!properties.version_support) {
+        err = 1;
+    }
+
+    // Destroy the OpenACC context
+    acc_destroy_context(context);
+
+    return err;
 }
 #endif
 

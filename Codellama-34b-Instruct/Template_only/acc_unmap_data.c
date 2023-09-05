@@ -6,25 +6,23 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a random array of integers
-    int* arr = (int*)malloc(sizeof(int) * 10);
-    for (int i = 0; i < 10; i++) {
-        arr[i] = rand();
-    }
+    // Create a new data region
+    acc_data_region_t data_region;
+    data_region.type = ACC_DATA_REGION_TYPE_UNDEFINED;
+    data_region.size = 0;
+    data_region.host_ptr = NULL;
+    data_region.device_ptr = NULL;
 
-    // Map the array to the device
-    acc_map_data(arr, 10, sizeof(int));
+    // Map the data region to the device
+    acc_map_data(data_region, ACC_DATA_REGION_TYPE_UNDEFINED, 0, 0, 0, 0, 0);
 
-    // Unmap the array from the device
-    acc_unmap_data(arr);
+    // Unmap the data region from the device
+    acc_unmap_data(data_region, ACC_DATA_REGION_TYPE_UNDEFINED, 0, 0, 0, 0, 0);
 
-    // Check that the array is no longer mapped to the device
-    if (acc_is_mapped(arr)) {
+    // Check that the data region is no longer mapped to the device
+    if (data_region.device_ptr != NULL) {
         err = 1;
     }
-
-    // Free the array
-    free(arr);
 
     return err;
 }

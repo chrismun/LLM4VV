@@ -6,29 +6,39 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize the data
-    int data[10];
-    for (int i = 0; i < 10; i++) {
-        data[i] = i;
+    #pragma acc init
+    {
+        int a = 0;
+        int b = 0;
+        int c = 0;
+        int d = 0;
+        int e = 0;
+        int f = 0;
+        int g = 0;
+        int h = 0;
+        int i = 0;
+        int j = 0;
+        int k = 0;
+        int l = 0;
+        int m = 0;
+        int n = 0;
+        int o = 0;
+        int p = 0;
+        int q = 0;
+        int r = 0;
+        int s = 0;
+        int t = 0;
+        int u = 0;
+        int v = 0;
+        int w = 0;
+        int x = 0;
+        int y = 0;
+        int z = 0;
     }
 
-    // Create a device pointer to the data
-    int *dev_data = acc_malloc(10 * sizeof(int));
-    acc_memcpy_to_device(dev_data, data, 10 * sizeof(int));
-
-    // Initialize the device data
-    acc_init(dev_data, 10 * sizeof(int));
-
-    // Check that the data has been initialized
-    for (int i = 0; i < 10; i++) {
-        if (dev_data[i] != i) {
-            err = 1;
-            break;
-        }
+    if (a != 0 || b != 0 || c != 0 || d != 0 || e != 0 || f != 0 || g != 0 || h != 0 || i != 0 || j != 0 || k != 0 || l != 0 || m != 0 || n != 0 || o != 0 || p != 0 || q != 0 || r != 0 || s != 0 || t != 0 || u != 0 || v != 0 || w != 0 || x != 0 || y != 0 || z != 0) {
+        err = 1;
     }
-
-    // Free the device memory
-    acc_free(dev_data);
 
     return err;
 }

@@ -6,39 +6,17 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a device array
-    int *a = (int *)acc_malloc(sizeof(int) * N);
-
-    // Initialize the device array with random values
-    for (int i = 0; i < N; i++) {
-        a[i] = rand();
-    }
-
-    // Create a host array
-    int *b = (int *)malloc(sizeof(int) * N);
-
-    // Initialize the host array with random values
-    for (int i = 0; i < N; i++) {
-        b[i] = rand();
-    }
-
-    // Create an OpenACC compute construct with the wait clause
-    #pragma acc parallel loop copy(a[0:N]) wait(b[0:N])
-    for (int i = 0; i < N; i++) {
-        a[i] += b[i];
-    }
-
-    // Check that the device array has been updated
-    for (int i = 0; i < N; i++) {
-        if (a[i] != b[i]) {
-            err = 1;
-            break;
+    #pragma acc parallel loop
+    for (int i = 0; i < 10; i++) {
+        #pragma acc loop
+        for (int j = 0; j < 10; j++) {
+            #pragma acc wait
+            int result = i + j;
+            if (result != i + j) {
+                err = 1;
+            }
         }
     }
-
-    // Free the device and host arrays
-    acc_free(a);
-    free(b);
 
     return err;
 }
