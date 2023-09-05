@@ -1,24 +1,35 @@
+#include "acc_testsuite.h"
 #ifndef T1
-//T1:serial,reduction,loop,V:1.0-2.0
+//T1:parallel,data,parallel,if,loop,V:2.5-2.7
 int test1(){
     int err = 0;
     srand(SEED);
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    int a = 0;
+    int b[NUM GANGS] = {0};
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+    #pragma acc data copyin(a) copyout(b)
+    {
+        #pragma acc parallel
+        {
+            int local_a = 0;
+
+            #pragma acc loop reduction(+:local_a)
+            for (int x = 0; x < n; ++x){
+                local_a += 1;
+            }
+
+            #pragma acc barrier
+
+            #pragma acc loop
+            for (int x = 0; x < NUM GANGS; ++x){
+                b[x] = local_a;
+            }
+        }
     }
 
-    #pragma acc parallel loop reduction(+:b[0:n])
-    for (int x = 0; x < n; ++x){
-        b[x] += a[x];
-    }
-
-    for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - (a[x] * NUM_TEST_CALLS)) > PRECISION){
+    for (int x = 0; x < NUM GANGS; ++x){
+        if (b[x] != n){
             err += 1;
             break;
         }
@@ -33,7 +44,7 @@ int main(){
     int failed;
 #ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+    for (int x = 0; x < NUM TEST CALLS; ++x){
         failed = failed + test1();
     }
     if (failed != 0){

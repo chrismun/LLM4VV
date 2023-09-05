@@ -1,86 +1,41 @@
-#include "acc_testsuite.h"
+internal control variables have been modified correctly.
 
-int test_set_default_async() {
-    int err = 0;
-    int old_default_async = acc_get_default_async();
+Here's an example code that tests the set directive with the default_async and device_num clauses:
 
-    #pragma acc set default_async(10)
+#ifdef _OPENACC
+#include <openacc.h>
+#endif
 
-    int new_default_async = acc_get_default_async();
-    if (new_default_async != 10) {
-        err += 1;
-    }
-
-    #pragma acc set default_async(acc_async_default)
-
-    int restored_default_async = acc_get_default_async();
-    if (restored_default_async != old_default_async) {
-        err += 1;
-    }
-
-    return err;
-}
-
-int test_set_device_num() {
-    int err = 0;
-    int old_device_num = acc_get_device_num();
-
-    #pragma acc set device_num(1)
-
-    int new_device_num = acc_get_device_num();
-    if (new_device_num != 1) {
-        err += 1;
-    }
-
-    #pragma acc set device_num(-1)
-
-    int restored_device_num = acc_get_device_num();
-    if (restored_device_num != old_device_num) {
-        err += 1;
-    }
-
-    return err;
-}
-
-int test_set_device_type() {
-    int err = 0;
-    acc_device_t old_device_type = acc_get_device_type();
-
-    #pragma acc set device_type(acc_device_nvidia)
-
-    acc_device_t new_device_type = acc_get_device_type();
-    if (new_device_type != acc_device_nvidia) {
-        err += 1;
-    }
-
-    #pragma acc set device_type(0)
-
-    acc_device_t restored_device_type = acc_get_device_type();
-    if (restored_device_type != old_device_type) {
-        err += 1;
-    }
-
-    return err;
-}
+#include <stdio.h>
 
 int main() {
-    int failcode = 0;
-    int failed = 0;
+    int err = 0;
+    int default_async_val = 2;
+    int device_num_val = 1;
 
-    failed = test_set_default_async();
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
+    #pragma acc set default_async(default_async_val) device_num(device_num_val)
+
+    #ifdef _OPENACC
+    int acc_default_async_var = acc_get_default_async();
+    int acc_current_device_num_var = acc_get_device_num();
+    #else
+    int acc_default_async_var = 0;
+    int acc_current_device_num_var = 0;
+    #endif
+
+    if (acc_default_async_var != default_async_val) {
+        printf("Error: acc_default_async_var = %d, expected %d\n", acc_default_async_var, default_async_val);
+        err = 1;
     }
 
-    failed = test_set_device_num();
-    if (failed != 0) {
-        failcode = failcode + (1 << 1);
+    if (acc_current_device_num_var != device_num_val) {
+        printf("Error: acc_current_device_num_var = %d, expected %d\n", acc_current_device_num_var, device_num_val);
+        err = 1;
     }
 
-    failed = test_set_device_type();
-    if (failed != 0) {
-        failcode = failcode + (1 << 2);
+    if (err == 0) {
+        printf("Compiler implementation of set directive is correct.\n");
     }
 
-    return failcode;
+    return err;
 }

@@ -1,58 +1,51 @@
-int test_acc_wait_async(){
+#ifndef T2
+//T2:device_type:ALL,multiple concurrent asyncs,V:2.7-2.7.1
+int test2(){
     int err = 0;
-    srand(SEED);
-
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
-    }
 
     #pragma acc data copyin(a[0:n]) copyout(b[0:n])
     {
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
+        acc_async_present_1 = 0;
+
+        #pragma acc parallel loop async(1)
+        for (int x = 0; x < n; ++x){
+            b[x] = a[x];
         }
 
-        int async1 = acc_async_test();
-        #pragma acc wait async(async1)
+        acc_async_present_1 = 1;
 
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] += 1.0;
-            }
+        #pragma acc wait async(1)
+
+#pragma acc parallel loop async(2)
+        for (int x = 0; x < n; ++x){
+            b[x] = a[x];
         }
+
+        #pragma acc wait async(2)
     }
-
+    
     for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - (a[x] + 1.0)) > PRECISION){
+        if (fabs(a[x] - b[x]) > PRECISION){
             err += 1;
             break;
         }
     }
-
-    free(a);
-    free(b);
+    
     return err;
 }
+#endif
 
 int main(){
     int failcode = 0;
-    int failed = 0;
-
-    failed = failed + test_acc_wait_async();
-
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+    int failed;
+#ifndef T2
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
     }
-
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
+    }
+#endif
     return failcode;
 }

@@ -1,39 +1,53 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <openacc.h>
+#ifndef T1
+//T1:parallel,loop,combined,copyout,free,V:1.0-S:2.7,C:2.0-2.7
+int test1(){
+    int err = 0;
+    srand(SEED);
 
-int main() {
-    int n = 10;
-    int *data_dev = (int *)acc_malloc(n * sizeof(int));
-    if (data_dev == NULL) {
-        printf("Failed to allocate memory on the device.\n");
-        exit(1);
+    real_t * a = acc_malloc(n * sizeof(real_t));
+    real_t * b = acc_malloc(n * sizeof(real_t));
+
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
-    // Initialize data on the host
-    int *data_host = (int *)malloc(n * sizeof(int));
-    for (int i = 0; i < n; i++) {
-        data_host[i] = i;
+#pragma acc data copyin(a[0:n]) copyout(b[0:n])
+    {
+#pragma acc parallel
+        {
+#pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
     }
 
-    // Transfer data from host to device
-    acc_memcpy_to_device(data_dev, data_host, n * sizeof(int));
-
-    // Perform operations on the device
-
-    // Free memory on the device
-    acc_free(data_dev);
-
-    // Check if memory was successfully freed
-    if (data_dev == NULL) {
-        printf("Memory successfully freed on the device.\n");
-    } else {
-        printf("Failed to free memory on the device.\n");
-        exit(1);
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
+            err += 1;
+            break;
+        }
     }
 
-    // Cleanup
-    free(data_host);
+    acc_free(a);
+    acc_free(b);
 
-    return 0;
+    return err;
+}
+#endif
+
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
+    return failcode;
 }

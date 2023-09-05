@@ -1,37 +1,25 @@
-#ifndef T1
-//T1:devices,runtime,data,data-region,V:2.7-3.0
-int test1(){
-    int i, err = 0;
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
-    #pragma acc enter data copyin(i)
-
-    i = 5;
-
-    #pragma acc parallel present(i)
-    {
-        i += 1;
+int main() {
+    const int n = 10;
+    int *hostData = (int *)malloc(n * sizeof(int));
+    int *deviceData = (int *)acc_malloc(n * sizeof(int));
+    
+    for (int i = 0; i < n; i++) {
+        hostData[i] = i;
     }
-
-    #pragma acc exit data copyout(i)
-
-    if (i != 6){
-        err += 1;
+    
+    acc_memcpy_to_device(deviceData, hostData, n * sizeof(int));
+    
+    printf("Data copied to device:\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", deviceData[i]);
     }
-
-    return err;
-}
-
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
-}
+    printf("\n");
+    
+    acc_free(deviceData);
+    free(hostData);
+    
+    return 0;

@@ -1,22 +1,34 @@
 #ifndef T1
-//T1:declare,device_resident,executable_test,V:1.0-2.7
+//T1:data,data-region,V:2.6-2.7
 int test1(){
     int err = 0;
+    srand(SEED);
 
-    #pragma acc declare device_resident(a)
-    #pragma acc enter data copyin(a)
-    #pragma acc parallel present(a)
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
+    }
+
+    #pragma acc data copyin(a[0:n])
     {
-        a[0]++;
+        #pragma acc parallel copyout(b[0:n]) device_resident(a,b)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
     }
 
-    #pragma acc update host(a)
-
-    if(a[0] != 1){
-        err += 1;
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
+            err += 1;
+            break;
+        }
     }
-
-    #pragma acc exit data delete(a)
 
     return err;
 }
@@ -25,7 +37,6 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
-
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
@@ -35,6 +46,5 @@ int main(){
         failcode = failcode + (1 << 0);
     }
 #endif
-
     return failcode;
 }

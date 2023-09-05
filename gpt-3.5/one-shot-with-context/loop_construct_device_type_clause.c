@@ -1,47 +1,39 @@
-#ifndef T1
-//T1:parallel,data,data-region,V:1.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "ompss.h"
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+void acc_loop_example(int n, double *a, double *b, double *c)
+{
+    int i;
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+    #pragma oss task for device_type(299)   <---- device_type clause
+    for (i = 0; i < n; i++) {
+        c[i] = a[i] + b[i];
     }
-
-    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
-    {
-        #pragma acc parallel device_type(nvidia) loop
-        for (int x = 0; x < n; ++x){
-            b[x] = a[x];
-        }
-    }
-
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
-            err += 1;
-            break;
-        }
-    }
-
-    return err;
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+int main()
+{
+    int i;
+    int n = 100;
+    double *a = malloc(n * sizeof(double));
+    double *b = malloc(n * sizeof(double));
+    double *c = malloc(n * sizeof(double));
+
+    for (i = 0; i < n; i++) {
+        a[i] = i;
+        b[i] = 2 * i;
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+
+    acc_loop_example(n, a, b, c);
+
+    for (i = 0; i < n; i++) {
+        printf("%lf ", c[i]);
     }
-#endif
-    return failcode;
-}
+
+    free(a);
+    free(b);
+    free(c);
+
+    return 0;

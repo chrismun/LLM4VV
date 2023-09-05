@@ -1,5 +1,5 @@
 #ifndef T1
-//T1:parallel,data,data-region,M:2.7
+//T1:data,map,data-region,V:1.0
 int test1(){
     int err = 0;
     srand(SEED);
@@ -12,9 +12,9 @@ int test1(){
         b[x] = 0.0;
     }
 
-    #pragma acc enter data copyin(a[0:n])
-    
-    #pragma acc parallel
+    #pragma acc enter data map(to: a[0:n])
+
+    #pragma acc kernels
     {
         #pragma acc loop
         for (int x = 0; x < n; ++x){

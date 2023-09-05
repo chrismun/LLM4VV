@@ -1,54 +1,50 @@
-#include "acc_testsuite.h"
-
 #ifndef T1
-// T1: kernel data cache // different loop structure is tested in kernel loop directive testing 
-int test1()
-{
-    int fail = 0;
-    int i, a[100], b[100];
-    for (i = 0; i < 100; ++i)
-    {
-        a[i] = i;
-        b[i] = 0;
+//T1:cache,data,parallel,V:0.9-2.5
+int test1(){
+    int err = 0;
+    srand(SEED);
+
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
-    #pragma acc data copyin(a[0:100]) copyout(b[0:100])
+    #pragma acc data copyin(a[0:n]) 
     {
-        #pragma acc parallel loop cache(a[0:50])
-        for (i = 0; i < 100; ++i)
+        #pragma acc parallel
         {
-            b[i] = a[i];
+            #pragma acc loop cache(b[0:n])
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
         }
     }
 
-    for (i = 0; i < 100; ++i)
-    {
-        if (b[i] != a[i])
-        {
-            fail = 1;
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
+            err += 1;
+            break;
         }
     }
 
-    return fail;
+    return err;
 }
 #endif
 
-int main()
-{
+int main(){
     int failcode = 0;
     int failed;
-
-    #ifndef T1
+#ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x)
-    {
-        failed += test1();
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-    if (failed != 0)
-    {
+    if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-    #endif
-
+#endif
     return failcode;
 }

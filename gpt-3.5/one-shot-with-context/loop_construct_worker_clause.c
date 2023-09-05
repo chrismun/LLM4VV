@@ -1,5 +1,5 @@
 #ifndef T1
-//T1:parallel,data,data-region,V:1.0-2.7
+//T1:worker,loop,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
@@ -12,15 +12,9 @@ int test1(){
         b[x] = 0.0;
     }
 
-    #pragma acc data copyin(a[0:n])
-    {
-        #pragma acc parallel
-        {
-            #pragma acc loop worker
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
-        }
+    #pragma acc parallel loop worker
+    for (int x = 0; x < n; ++x){
+        b[x] = a[x];
     }
 
     for (int x = 0; x < n; ++x){

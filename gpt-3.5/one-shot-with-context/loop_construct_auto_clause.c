@@ -1,5 +1,5 @@
 #ifndef T1
-//T1:kernels,loop,combined-auto,V:1.0-2.0
+//T1:parallel,data,loop,auto,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
@@ -9,11 +9,15 @@ int test1(){
 
     for (int x = 0; x < n; ++x){
         a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
-    #pragma acc kernels loop auto
-    for (int x = 0; x < n; ++x){
-        b[x] = a[x];
+    #pragma acc parallel data copyin(a[0:n]) copyout(b[0:n])
+    {
+        #pragma acc loop auto
+        for (int x = 0; x < n; ++x){
+            b[x] = a[x];
+        }
     }
 
     for (int x = 0; x < n; ++x){

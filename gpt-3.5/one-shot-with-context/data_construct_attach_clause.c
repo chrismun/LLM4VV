@@ -1,30 +1,34 @@
 #ifndef T1
-//T1:parallel,data,data-region,V:1.0-2.7
+//T1:attach,undevice,platform-independent,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
 
-    real_t * in = (real_t *)malloc(n * sizeof(real_t));
-    real_t * out = (real_t *)malloc(n * sizeof(real_t));
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
-        in[x] = rand() / (real_t)(RAND_MAX / 10);
-        out[x] = 0.0;
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
-    #pragma acc data copyin(in[0:n]) attach(out[0:n])
+    #pragma acc enter data copyin(a[0:n])
+    #pragma acc enter data attach(b[0:n])
+
+    #pragma acc kernels
     {
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                out[x] = in[x];
-            }
+        #pragma acc loop
+        for (int x = 0; x < n; ++x){
+            b[x] = a[x];
         }
     }
 
+    #pragma acc exit data detach(b[0:n])
+    #pragma acc exit data delete(a[0:n])
+
+
     for (int x = 0; x < n; ++x){
-        if (fabs(in[x] - out[x]) > PRECISION){
+        if (fabs(a[x] - b[x]) > PRECISION){
             err += 1;
             break;
         }

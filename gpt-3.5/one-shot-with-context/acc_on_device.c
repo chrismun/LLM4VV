@@ -1,13 +1,16 @@
-#include <stdio.h>
-#include <openacc.h>
+#include "acc_testsuite.h"
 
-int main() {
-    int isDevice = acc_on_device(acc_device_nvidia);
-  
-    if (isDevice) {
-        printf("Running on an NVIDIA GPU\n");
-    } else {
-        printf("Not running on an NVIDIA GPU\n");
+int main()
+{
+    int dev_type = acc_on_device(acc_device_gpu);
+    
+    if (dev_type)
+    {
+        printf("Running on GPU\n");
     }
-  
+    else
+    {
+        printf("Not running on GPU\n");
+    }
+    
     return 0;

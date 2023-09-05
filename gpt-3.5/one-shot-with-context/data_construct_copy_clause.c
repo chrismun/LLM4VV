@@ -1,5 +1,5 @@
 #ifndef T1
-// T1: data, loop, copy, present_or_copy, pcopy, V:2.7
+// T1: data,data-region,V:2.5
 int test1()
 {
     int err = 0;
@@ -7,47 +7,57 @@ int test1()
 
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
-    real_t *c = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int x = 0; x < n; ++x) {
-        a[x] = 1.0;
-        b[x] = 2.0;
-        c[x] = 0.0;
+    for (int x = 0; x < n; ++x)
+    {
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
-    #pragma acc data copy(a[0:n], c[0:n]) present_or_copy(b[0:n])
+    #pragma acc enter data copyin(a[0:n], b[0:n])
+
+    #pragma acc data copy(a[0:n]) copyout(b[0:n])
     {
-        #pragma acc parallel loop
-        for (int x = 0; x < n; ++x) {
-            c[x] = a[x] + b[x];
+        #pragma acc parallel
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x)
+            {
+                b[x] = a[x];
+            }
         }
     }
 
-    for (int x = 0; x < n; ++x) {
-        if (fabs(c[x] - (a[x] + b[x])) > PRECISION) {
+    for (int x = 0; x < n; ++x)
+    {
+        if (fabs(a[x] - b[x]) > PRECISION)
+        {
             err += 1;
             break;
         }
     }
 
+    #pragma acc exit data delete(a, b)
+
     return err;
 }
+
 #endif
 
 int main()
 {
     int failcode = 0;
     int failed;
-    
 #ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+    for (int x = 0; x < NUM_TEST_CALLS; ++x)
+    {
         failed = failed + test1();
     }
-    if (failed != 0) {
+    if (failed != 0)
+    {
         failcode = failcode + (1 << 0);
     }
 #endif
-    
     return failcode;
 }

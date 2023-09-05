@@ -14,15 +14,28 @@ int test1(){
 
     #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels
-        #pragma acc loop gang
-        for (int x = 0; x < n; ++x){
-            a[x] = 2 * a[x];
+        #pragma acc parallel copyout(b[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
         }
     }
 
+    // Attach array a
+    #pragma acc attach(a[0:n])
+
+    // Update a using CPU code
     for (int x = 0; x < n; ++x){
-        if (a[x] != 2 * b[x]){
+        a[x] = a[x] * 2;
+    }
+
+    // Detach array a
+    #pragma acc detach(a[0:n])
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
             err += 1;
             break;
         }

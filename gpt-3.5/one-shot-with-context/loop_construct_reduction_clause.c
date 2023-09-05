@@ -1,48 +1,32 @@
-#ifndef T1
-//T1:parallel,data,data-region,V:2.7-3.1
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <OpenACC/openacc.h>
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t sum = 0.0;
+#define N 1000
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
+int main() {
+    int i;
+    float sum = 0.0, sum_parallel = 0.0;
+
+    float arr[N];
+    for (i = 0; i < N; i++) {
+        arr[i] = i + 1;
     }
 
-    #pragma acc data copyin(a[0:n]) copy(sum)
-    {
-        #pragma acc parallel loop reduction(+:sum)
-        for (int x = 0; x < n; ++x){
-            sum += a[x];
-        }
+    #pragma acc parallel loop reduction(+:sum_parallel)
+    for (i = 0; i < N; i++) {
+        sum_parallel += arr[i];
     }
 
-    real_t expected_sum = 0.0;
-    for (int x = 0; x < n; ++x){
-        expected_sum += a[x];
+    for (i = 0; i < N; i++) {
+        sum += arr[i];
     }
 
-    if (fabs(sum - expected_sum) > PRECISION){
-        err += 1;
+    if (fabs(sum - sum_parallel) < 1e-6) {
+        printf("Reduction test passed!\n");
+    } else {
+        printf("Reduction test failed!\n");
     }
 
-    return err;
-}
-#endif
-
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
-}
+    return 0;

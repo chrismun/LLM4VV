@@ -1,39 +1,46 @@
 #ifndef T1
-//T1:data,data-region,V:2.8-2.8.10
+//T1:parallel,data,data-region,V:2.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
 
     real_t * a = (real_t *)malloc(n * sizeof(real_t));
     real_t * b = (real_t *)malloc(n * sizeof(real_t));
-    real_t * c = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = c[x] = 0.0;
+        a[x] = 0.0;
+        b[x] = 0.0;
     }
 
-    #pragma acc enter data copyin(a[0:n]) create(b[0:n], c[0:n])
+    #pragma acc data copyout(a[0:n])
     {
-        #pragma acc parallel present(a[0:n]) create(b[0:n], c[0:n])
+        #pragma acc parallel
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                a[x] = 1.0;
+            }
+        }
+    }
+
+    #pragma acc data copyin(a[0:n]) create(b[0:n])
+    {
+        #pragma acc parallel
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x){
                 b[x] = a[x];
-                c[x] = a[x] * 2;
             }
         }
     }
 
     for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION || fabs(a[x] * 2 - c[x]) > PRECISION){
+        if (fabs(a[x] - b[x]) > PRECISION){
             err += 1;
             break;
         }
     }
 
-    #pragma acc exit data delete(a[0:n], b[0:n], c[0:n])
-    
     return err;
 }
 #endif

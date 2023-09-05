@@ -1,5 +1,5 @@
 #ifndef T1
-//T1:parallel,data,data-region,V:1.0-2.7
+//T1:parallel,loop,data,data-region,V:2.9-3.0
 int test1(){
     int err = 0;
     srand(SEED);
@@ -14,9 +14,9 @@ int test1(){
         c[x] = 0.0;
     }
 
-    #pragma acc data copyin(a[0:n], b[0:n]) copyout(c[0:n])
+    #pragma acc data copyin(a[0:n], b[0:n]), copyout(c[0:n])
     {
-        #pragma acc parallel loop tile(10)
+        #pragma acc parallel loop gang(tile_size), vector_length(vector_length)
         for (int x = 0; x < n; ++x){
             c[x] = a[x] + b[x];
         }

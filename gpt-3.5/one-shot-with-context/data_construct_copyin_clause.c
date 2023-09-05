@@ -1,55 +1,50 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <openacc.h>
+#ifndef T1
+//T1:parallel,data,data-region,copyin,V:1.0-2.7
+int test1(){
+    int err = 0;
+    srand(SEED);
 
-#define N 100
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-int main() {
-    int *a = (int *)malloc(N * sizeof(int));
-    int *b = (int *)malloc(N * sizeof(int));
-
-    // Initialize array a
-    for (int i = 0; i < N; i++) {
-        a[i] = i;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
-    #pragma acc data copyin(a[0:N])
+    #pragma acc data copyin(a[0:n]) copyin(b[0:n])
     {
-        // Perform some computation on array a
-        #pragma acc parallel loop
-        for (int i = 0; i < N; i++) {
-            a[i] += 1;
-        }
-
-        // Copy back data from the device to host
-        #pragma acc data copyout(b[0:N])
+        #pragma acc parallel
         {
-            // Copy array a to array b
-            #pragma acc parallel loop
-            for (int i = 0; i < N; i++) {
-                b[i] = a[i];
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
             }
         }
     }
 
-    // Verify that array b contains the updated data from array a
-    int success = 1;
-    for (int i = 0; i < N; i++) {
-        if (b[i] != a[i]) {
-            success = 0;
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
+            err += 1;
             break;
         }
     }
 
-    if (success) {
-        printf("Data copied successfully\n");
-    } else {
-        printf("Data copy failed\n");
+    return err;
+}
+#endif
+
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-
-    // Clean up memory
-    free(a);
-    free(b);
-
-    return 0;
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
+    return failcode;
 }

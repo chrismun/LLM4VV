@@ -1,62 +1,51 @@
 #ifndef T1
-//T1:enter data,data-region,V:2.5-2.9
+//T1:parallel,data,data-region,V:1.0-2.7
 int test1(){
+    int err = 0;
+    srand(SEED);
 
-    // Create an array of integers
-    int n = 10;
-    int *a = (int *)malloc(n * sizeof(int));
-    int *b = (int *)malloc(n * sizeof(int));
-    
-    // Initialize the array
-    for(int i = 0; i < n; i++){
-        a[i] = i;
-        b[i] = 0;
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
+
+    #pragma acc data deviceptr(a, b, c)
+
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        c[x] = 0.0;
     }
 
-    // Copy data to device
-    #pragma acc enter data copyin(a[0:n]) create(b[0:n])
-
-    // Perform computation on device
-    #pragma acc parallel loop
-    for(int i = 0; i < n; i++){
-        b[i] = a[i] * 2;
+    #pragma acc parallel
+    {
+        #pragma acc loop
+        for (int x = 0; x < n; ++x){
+            c[x] = a[x] * b[x];
+        }
     }
 
-    // Copy data back to host
-    #pragma acc exit data copyout(b[0:n])
-
-    // Verify the results
-    int success = 1;
-    for(int i = 0; i < n; i++){
-        if(b[i] != (a[i]*2)){
-            success = 0;
+    for (int x = 0; x < n; ++x){
+        if (fabs(c[x] - (a[x] * b[x])) > PRECISION){
+            err += 1;
             break;
         }
     }
 
-    free(a);
-    free(b);
-
-    return !success;
+    return err;
 }
 #endif
 
 int main(){
-
-    int fail = 0;
-
-    // Test the implementation
-    #ifndef T1
-    fail = fail || test1();
-    #endif
-
-    // Print the result
-    if(fail){
-        printf("Test failed\n");
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-    else{
-        printf("Test passed\n");
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
     }
-
-    return fail;
+#endif
+    return failcode;
 }

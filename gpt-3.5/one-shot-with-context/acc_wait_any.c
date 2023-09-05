@@ -1,28 +1,23 @@
-#include <stdio.h>
-#include <openacc.h>
+int main(){
+    int fail = 0;
+    int count = 3;
+    int wait_arg[3] = {acc_async_sync, acc_async_sync, acc_async_sync};
+    int result;
 
-int main() {
-    const int num_queues = 3;
-    acc_queue_t queues[num_queues];
-    int index;
-
-    // Create asynchronous queues
-    for (int i = 0; i < num_queues; i++) {
-        acc_create_queue(&queues[i]);
+    // Test call to acc_wait_any
+    result = acc_wait_any(count, wait_arg);
+    
+    if(result != -1) {
+        fail = 1;
     }
 
-    // Execute some asynchronous operations on the queues
-    // ...
+    // Test call to acc_wait_any_device
+    int dev_num = 0;
+    result = acc_wait_any_device(count, wait_arg, dev_num);
 
-    // Wait for any of the queues to complete
-    index = acc_wait_any(num_queues, queues);
-
-    // Print the index of the completed queue
-    printf("Queue %d completed first\n", index);
-
-    // Destroy the queues
-    for (int i = 0; i < num_queues; i++) {
-        acc_destroy_queue(queues[i]);
+    if(result != -1) {
+        fail = 1;
     }
 
-    return 0;
+    return fail;
+}

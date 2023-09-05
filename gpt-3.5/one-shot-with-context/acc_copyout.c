@@ -1,56 +1,41 @@
-#include <openacc.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <openacc.h>
 
-void acc_copyout(void *data_arg, size_t bytes);
-void acc_delete(void *data_arg, size_t bytes);
+#define N 100
 
-int test_acc_copyout() {
-    int err = 0;
-    int size = 10;
+int main()
+{
+    int i;
+    int *data = (int *)malloc(N * sizeof(int));
+    int *copy = (int *)malloc(N * sizeof(int));
 
-    float *data_in = (float *)malloc(size * sizeof(float));
-    float *data_out = (float *)malloc(size * sizeof(float));
-
-    #pragma acc data copyin(data_in[0:size])
-    {
-        #pragma acc parallel loop
-        for (int i = 0; i < size; i++) {
-            data_out[i] = data_in[i];
-        }
+    // Initialize data
+    for (i = 0; i < N; i++) {
+        data[i] = i;
+        copy[i] = 0;
     }
 
-    // Check if data_in is not modified on the device
-    for (int i = 0; i < size; i++) {
-        if (data_in[i] != 0.0) {
-            err = 1;
+    // Copy data to GPU
+    acc_copyin(data, N * sizeof(int));
+
+    // Copy data from GPU to CPU
+    acc_copyout(copy, N * sizeof(int));
+
+    // Check if data is correctly copied
+    for (i = 0; i < N; i++) {
+        if (copy[i] != data[i]) {
+            printf("Error: Data mismatch at index %d\n", i);
             break;
         }
     }
 
-    // Use acc_copyout to copy data_out from device memory to host memory
-    acc_copyout(data_out, size * sizeof(float));
+    // Deallocate memory on GPU
+    acc_delete(data, N * sizeof(int));
 
-    // Verify if data_out has been properly copied from device memory to host memory
-    for (int i = 0; i < size; i++) {
-        if (data_out[i] != data_in[i]) {
-            err = 1;
-            break;
-        }
-    }
+    // Free memory on CPU
+    free(data);
+    free(copy);
 
-    // Clean up
-    free(data_in);
-    free(data_out);
-
-    return err;
-}
-
-int main() {
-    int result = test_acc_copyout();
-    if (result == 0) {
-        printf("Test passed\n");
-    } else {
-        printf("Test failed\n");
-    }
     return 0;
+}

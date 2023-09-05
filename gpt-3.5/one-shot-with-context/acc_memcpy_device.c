@@ -1,60 +1,39 @@
-#ifndef T1
-//T1:parallel,data,data-region,memcpy,V:1.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-    real_t * c = (real_t *)malloc(n * sizeof(real_t));
+#define SIZE 100
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
-        c[x] = 0.0;
+void acc_memcpy_device_test() {
+    int *host_data = (int *)malloc(SIZE * sizeof(int));
+    int *device_data = (int *)acc_malloc(SIZE * sizeof(int));
+
+    // Initialize host data
+    for (int i = 0; i < SIZE; i++) {
+        host_data[i] = i;
     }
 
-    #pragma acc data copyin(a[0:n])
-    {
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
-        }
+    // Copy data from host to device
+    acc_memcpy_device(device_data, host_data, SIZE * sizeof(int));
 
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                acc_memcpy_device(&c[x], &b[x], sizeof(real_t));
-            }
+    // Copy data from device to host
+    int *result_data = (int *)malloc(SIZE * sizeof(int));
+    acc_memcpy_device(result_data, device_data, SIZE * sizeof(int));
+
+    // Verify the result
+    for (int i = 0; i < SIZE; i++) {
+        if (result_data[i] != host_data[i]) {
+            printf("Error: data mismatch at index %d\n", i);
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - c[x]) > PRECISION){
-            err += 1;
-            break;
-        }
-    }
-
-    return err;
+    // Free memory
+    free(host_data);
+    free(result_data);
+    acc_free(device_data);
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
-}
+int main() {
+    acc_memcpy_device_test();
+
+    return 0;

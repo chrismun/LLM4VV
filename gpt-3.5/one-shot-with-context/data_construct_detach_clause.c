@@ -1,50 +1,52 @@
 #ifndef T1
-//T1:parallel,data,data-region,V:1.0-2.7
+//T1:data,data-region,data-use,data-dependencies,attach,detach,dependence,V:v1.0-2.7
 int test1(){
     int err = 0;
+
     srand(SEED);
 
     real_t * a = (real_t *)malloc(n * sizeof(real_t));
     real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
+    real_t * d = (real_t *)malloc(n * sizeof(real_t));
+    real_t * e = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
         a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        c[x] = 0.0;
+        d[x] = 0.0;
+        e[x] = 0.0;
     }
 
-    #pragma acc data copyin(a[0:n])
+    #pragma acc data copyin(a[0:n], b[0:n])
     {
         #pragma acc parallel
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x){
-                b[x] = a[x];
+                c[x] = a[x] + b[x];
             }
         }
-        #pragma acc exit data detach(a[0:n])
-    }
-
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
-            err += 1;
-            break;
+        #pragma acc parallel
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                d[x] = b[x] - a[x];
+            }
+        }
+        #pragma acc exit data detach(a[0:n], b[0:n])
+        #pragma acc parallel
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                e[x] = c[x] * d[x];
+            }
         }
     }
 
-    #pragma acc enter data copyin(b[0:n])
-    #pragma acc parallel
-    {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            b[x] += 1.0;
-        }
-    }
-    
-    #pragma acc data copyout(b[0:n])
-    {}
-
     for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - a[x]) > PRECISION){
+        if (fabs(e[x] - (a[x] + b[x]) * (b[x] - a[x])) > PRECISION){
             err += 1;
             break;
         }

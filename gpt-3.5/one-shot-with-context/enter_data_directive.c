@@ -1,44 +1,51 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <openacc.h>
+#ifndef T2
+//T2:parallel,data,data-region,V:2.7-2.7
+int test2(){
+    int err = 0;
+    srand(SEED);
 
-#define N 100
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-void initialize_array(float* array, int size) {
-    for (int i = 0; i < size; i++) {
-        array[i] = i;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
+
+    #pragma acc enter data copyin(a[0:n]) create(b[0:n])
+
+    #pragma acc parallel present(a[0:n], b[0:n])
+    {
+        #pragma acc loop
+        for (int x = 0; x < n; ++x){
+            b[x] = a[x];
+        }
+    }
+
+    #pragma acc exit data copyout(b[0:n]) delete(a[0:n])
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
+            err += 1;
+            break;
+        }
+    }
+
+    return err;
 }
+#endif
 
-int verify_sum(float* array, int size) {
-    float sum = (size - 1) * (size / 2.0);
-    for (int i = 0; i < size; i++) {
-        sum -= array[i];
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T2
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
     }
-    if (sum == 0) return 1;
-    return 0;
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
+    }
+#endif
+    return failcode;
 }
-
-int main() {
-    float* array = (float*)malloc(N * sizeof(float));
-
-    initialize_array(array, N);
-
-    #pragma acc enter data create(array[0:N])
-
-    // Perform some operations on the array using OpenACC directives
-
-    #pragma acc parallel loop
-    for (int i = 0; i < N; i++) {
-        array[i]++;
-    }
-
-    #pragma acc exit data copyout(array[0:N])
-
-    // Verify the correctness of the result
-    int success = verify_sum(array, N);
-    printf("Success: %d\n", success);
-
-    free(array);
-
-    return 0;

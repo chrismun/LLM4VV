@@ -2,28 +2,45 @@
 #include <stdlib.h>
 #include <openacc.h>
 
-void acc_update_device(void *data_arg, size_t bytes);
-void acc_update_self(void *data_arg, size_t bytes);
+#define N 10
 
 int main() {
-    int size = 10;
-    int *data = (int*)malloc(size * sizeof(int));
+    int* data = (int*)malloc(N * sizeof(int));
 
-    #pragma acc data pcopy(data[0:size])
-    {
-        #pragma acc parallel loop
-        for (int i = 0; i < size; i++) {
-            data[i] = i;
-        }
-
-        #pragma acc update_self(data[0:size])
+    // Initialize data in host memory
+    for (int i = 0; i < N; i++) {
+        data[i] = i;
     }
 
-    for (int i = 0; i < size; i++) {
+    // Transfer data to the device memory
+    #pragma acc enter data copyin(data[0:N])
+
+    // Update the device memory from the corresponding local memory
+    #pragma acc update device(data[0:N])
+
+    // Print the updated data from the device memory
+    printf("Device data:\n");
+    #pragma acc data present(data[0:N])
+    {
+        #pragma acc parallel loop
+        for (int i = 0; i < N; i++) {
+            printf("%d ", data[i]);
+        }
+        printf("\n");
+    }
+
+    // Transfer data back to the host memory
+    #pragma acc update self(data[0:N])
+
+    // Print the data from host memory
+    printf("Host data:\n");
+    for (int i = 0; i < N; i++) {
         printf("%d ", data[i]);
     }
     printf("\n");
 
+    // Free the allocated memory
+    #pragma acc exit data delete(data[0:N])
     free(data);
 
     return 0;

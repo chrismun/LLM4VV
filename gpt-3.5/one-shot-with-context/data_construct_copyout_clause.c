@@ -1,55 +1,39 @@
-++
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
-#ifndef T1
-//T1:parallel,data,data-region,V:1.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#define N 100
 
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
-    real_t *c = (real_t *)malloc(n * sizeof(real_t));
+int main() {
+    int i;
+    int *data = (int *)malloc(N * sizeof(int));
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
-        c[x] = 0.0;
+    // Initialize data
+    for (i = 0; i < N; i++) {
+        data[i] = i;
     }
 
-    #pragma acc data copyin(a[0:n])
-    {
-        #pragma acc parallel copyout(b[0:n]) copyout(c[0:n])
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-                c[x] = a[x] * 2;
-            }
+    // Copy data to GPU
+    #pragma acc enter data copyin(data[0:N])
+
+    // Perform computations on GPU
+    #pragma acc parallel loop present_or_copyout(data[0:N])
+    for (i = 0; i < N; i++) {
+        data[i] *= 2;
+    }
+
+    // Copy data back to CPU
+    #pragma acc exit data copyout(data[0:N])
+
+    // Check result
+    for (i = 0; i < N; i++) {
+        if (data[i] != i * 2) {
+            printf("Error: Data is incorrect!\n");
+            return 1;
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION || fabs(a[x] * 2 - c[x]) > PRECISION){
-            err += 1;
-            break;
-        }
-    }
+    printf("Success: Data is correct!\n");
 
-    return err;
-}
-
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+    return 0;
 }

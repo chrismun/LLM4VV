@@ -1,48 +1,52 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <openacc.h>
+#ifndef T1
+//T1:parallel,data,data-region,V:2.0-2.7
+int test1(){
+    int err = 0;
+    srand(SEED);
 
-#define SIZE 100
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
 
-int main() {
-  int* a = (int*) malloc(SIZE * sizeof(int));
-  int* b = (int*) malloc(SIZE * sizeof(int));
-
-  // Initialize array a
-  for (int i = 0; i < SIZE; i++) {
-    a[i] = i;
-    b[i] = 0;
-  }
-
-  // Copy array a to device memory
-  #pragma acc enter data copyin(a[0:SIZE])
-
-  // Update array b on the device
-  #pragma acc parallel loop present(a, b)
-  for (int i = 0; i < SIZE; i++) {
-    b[i] = a[i] + 1;
-  }
-
-  // Copy array b back to host memory
-  #pragma acc exit data copyout(b[0:SIZE])
-
-  // Verify the results
-  int success = 1;
-  for (int i = 0; i < SIZE; i++) {
-    if (b[i] != a[i] + 1) {
-      success = 0;
-      break;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        c[x] = 0.0;
     }
-  }
 
-  if (success) {
-    printf("Data construct test passed\n");
-  } else {
-    printf("Data construct test failed\n");
-  }
+    #pragma acc data copyin(a[0:n], b[0:n]) copyout(c[0:n])
+    {
+        #pragma acc parallel
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                c[x] = a[x] + b[x];
+            }
+        }
+    }
 
-  // Free memory
-  free(a);
-  free(b);
+    for (int x = 0; x < n; ++x){
+        if (fabs(c[x] - (a[x] + b[x])) > PRECISION){
+            err += 1;
+            break;
+        }
+    }
 
-  return 0;
+    return err;
+}
+#endif
+
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
+    return failcode;
+}

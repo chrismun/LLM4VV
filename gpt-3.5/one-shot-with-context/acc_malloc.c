@@ -1,18 +1,31 @@
 #ifndef T1
-//T1:parallel,reduction,V:1.0-2.7
+//T1:malloc,devonly,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
 
-    real_t * a = (real_t *)acc_malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)acc_malloc(n * sizeof(real_t));
+    int * a = (int *)acc_malloc(n * sizeof(int));
+    int * b = (int *)malloc(n * sizeof(int));
 
-    if (a == NULL || b == NULL){
-        err = 1;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (int)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    acc_free(a);
-    acc_free(b);
+    #pragma acc parallel copyout(b[0:n])
+    {
+        #pragma acc loop
+        for (int x = 0; x < n; ++x){
+            b[x] = a[x];
+        }
+    }
+
+    for (int x = 0; x < n; ++x){
+        if (a[x] != b[x]){
+            err += 1;
+            break;
+        }
+    }
 
     return err;
 }

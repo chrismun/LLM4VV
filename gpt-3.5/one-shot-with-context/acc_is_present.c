@@ -2,11 +2,12 @@
 #include <openacc.h>
 
 int main() {
-    int data[10];
+    int data = 123;
+    int isPresent;
 
-    #pragma acc data copy(data[0:10])
-    {
-        printf("Is data present on the device? %s\n", acc_is_present(data, sizeof(data)) ? "Yes" : "No");
-    }
+    isPresent = acc_is_present(&data, sizeof(int));
+
+    printf("Is data present on device? %d\n", isPresent);
 
     return 0;
+}

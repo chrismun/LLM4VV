@@ -1,11 +1,11 @@
 #ifndef T1
-//T1:directive
+//T1:parallel,data,data-region,V:2.5-2.7
 int test1(){
     int err = 0;
-
     int async = acc_get_default_async();
-    if (async != acc_async_noval) {
-        err = 1;
+
+    if (async != acc_async_noval){
+        err += 1;
     }
 
     return err;

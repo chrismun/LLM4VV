@@ -1,38 +1,43 @@
-#include "acc_testsuite.h"
-#include <stdio.h>
-
 #ifndef T1
-// T1:parallel,data,data-region,V:1.0-2.7
-int test1() {
+//T1:parallel,data,data-region,V:2.7
+int test1(){
     int err = 0;
-    int dev_num, dev_type;
+    srand(SEED);
 
-    // Choose device number and device type
-    dev_num = 0;
-    dev_type = acc_device_nvidia;
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    // Set the device number and device type
-    acc_set_device_num(dev_num, dev_type);
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
+    }
 
-    // Get the current device number
-    int current_dev_num = acc_get_device_num(acc_device_nvidia);
-    if (current_dev_num != dev_num) {
-        err = 1;
+    #pragma acc data copyin(a[0:n])
+    {
+        #pragma acc parallel
+        {
+            acc_set_device_num(1, acc_device_nvidia);
+
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
     }
 
     return err;
 }
 #endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
 #ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
     }
-    if (failed != 0) {
+    if (failed != 0){
         failcode = failcode + (1 << 0);
     }
 #endif

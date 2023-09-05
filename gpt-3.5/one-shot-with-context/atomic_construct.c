@@ -1,46 +1,57 @@
-#ifndef T2
-//T2:parallel,atomic,V:2.6-2.7
-int test2() {
+#ifndef T1
+//T1:parallel,data,data-region,atomic,V:1.0-2.7
+int test1(){
     int err = 0;
     srand(SEED);
 
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
+    int sum = 0;
+    int *a = (int *)malloc(n * sizeof(int));
 
-    for (int x = 0; x < n; ++x) {
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() % 10;
     }
 
-    #pragma acc parallel
+    #pragma acc data copyin(a[0:n]) copy(sum)
     {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x) {
-            #pragma acc atomic write
-            b[x] = a[x];
+        #pragma acc parallel
+        {
+            int private_sum = 0;
+
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                #pragma acc atomic
+                private_sum += a[x];
+            }
+
+            #pragma acc atomic
+            sum += private_sum;
         }
     }
 
-    for (int x = 0; x < n; ++x) {
-        if (a[x] != b[x]) {
-            err += 1;
-            break;
-        }
+    int expected_sum = 0;
+    for (int x = 0; x < n; ++x){
+        expected_sum += a[x];
+    }
+
+    if (sum != expected_sum){
+        err += 1;
     }
 
     return err;
 }
 
-int main() {
+#endif
+
+int main(){
     int failcode = 0;
     int failed;
-#ifndef T2
+#ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test2();
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-    if (failed != 0) {
-        failcode = failcode + (1 << 1);
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
     }
 #endif
     return failcode;

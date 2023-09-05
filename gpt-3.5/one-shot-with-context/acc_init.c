@@ -1,27 +1,45 @@
 #ifndef T1
-//T1:parallel,loop,V:1.7-2.7
+//T1:init,parallel,data,dev_type,V:2.5-2.7
 int test1(){
     int err = 0;
+    srand(SEED);
 
-    acc_init(acc_device_default);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    #pragma acc parallel
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+    }
+
+    acc_init(acc_device_nvidia);
+
+    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
     {
-        #pragma acc loop
-        for (int x = 0; x < 100; ++x){
-            // Some computation
+        #pragma acc parallel
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
+    }
+
+    acc_shutdown(acc_device_nvidia);
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
+            err += 1;
+            break;
         }
     }
 
     return err;
 }
-
 #endif
 
 int main(){
     int failcode = 0;
     int failed;
-
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
@@ -31,6 +49,5 @@ int main(){
         failcode = failcode + (1 << 0);
     }
 #endif
-
     return failcode;
 }

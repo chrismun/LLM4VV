@@ -1,41 +1,52 @@
-int test_host_data_use_device()
-{
+#ifndef T1
+//T1:parallel,data,data-region,V:1.0-2.7
+int test1(){
     int err = 0;
-    int num_devices, device;
 
-    #pragma acc deviceinfo num_devices(num_devices)
-    for (device = 0; device < num_devices; device++) {
-        int *device_ptr = NULL;
-        int *host_ptr = (int *) malloc(sizeof(int));
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-        #pragma acc host_data use_device(device_ptr) if(device_ptr != NULL)
+    for (int x = 0; x < n; ++x){
+        a[x] = 1.0;
+        b[x] = 0.0;
+    }
+
+    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
+    {
+        #pragma acc parallel
         {
-            if (device_ptr == NULL) {
-                device_ptr = (int *) malloc(sizeof(int));
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
             }
-            *device_ptr = *host_ptr;
         }
 
-        if (*host_ptr != *device_ptr) {
-            err += 1;
+        #pragma acc host_data use_device(a[0:n], b[0:n])
+        {
+            for (int x = 0; x < n; ++x){
+                if (b[x] != 1.0){
+                    err += 1;
+                    break;
+                }
+            }
         }
-
-        free(device_ptr);
-        free(host_ptr);
     }
 
     return err;
 }
+#endif
 
-int main()
-{
+int main(){
     int failcode = 0;
     int failed;
-
-    failed = test_host_data_use_device();
-    if (failed != 0) {
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-
+#endif
     return failcode;
 }

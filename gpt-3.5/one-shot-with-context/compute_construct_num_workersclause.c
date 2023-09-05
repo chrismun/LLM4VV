@@ -1,27 +1,32 @@
 #ifndef T1
-//T1:parallel,directives,data,V:1.0-2.7
+//T1:parallel,data,data-region
 int test1(){
     int err = 0;
     srand(SEED);
 
     real_t * a = (real_t *)malloc(n * sizeof(real_t));
     real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
         a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        c[x] = 0.0;
     }
 
-    #pragma acc parallel num_workers(2511) copyin(a[0:n]) copyout(b[0:n])
+    #pragma acc data copyin(a[0:n], b[0:n]) copyout(c[0:n])
     {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            b[x] = a[x];
+        #pragma acc parallel num_workers(4)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                c[x] = a[x] + b[x];
+            }
         }
     }
 
     for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
+        if (fabs(c[x] - (a[x] + b[x])) > PRECISION){
             err += 1;
             break;
         }

@@ -1,51 +1,40 @@
-#ifndef T1
-//T1:parallel,data,wait,V:1.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+void acc_wait_test() {
+    int n = 100;
+    int *a = (int*)malloc(n * sizeof(int));
+    int *b = (int*)malloc(n * sizeof(int));
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
+    #pragma acc parallel loop gang async(1)
+    for (int i = 0; i < n; ++i) {
+        a[i] = i;
     }
 
-    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
-    {
-        #pragma acc parallel
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
-        }
-        #pragma acc wait
+    #pragma acc parallel loop gang async(2)
+    for (int i = 0; i < n; ++i) {
+        b[i] = 2 * a[i];
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
-            err += 1;
-            break;
-        }
+    #pragma acc wait(1)
+
+    #pragma acc parallel loop gang async(3)
+    for (int i = 0; i < n; ++i) {
+        b[i] += a[i];
     }
 
-    return err;
+    #pragma acc wait(2,3)
+
+    for (int i = 0; i < n; ++i) {
+        printf("b[%d] = %d\n", i, b[i]);
+    }
+
+    free(a);
+    free(b);
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+int main() {
+    acc_wait_test();
+    return 0;
 }

@@ -1,15 +1,14 @@
 #ifndef T1
-//T1:parallel,kernels,copy,loop,combined,combined-short,swdev,simdev,parallel-loop,V:1.5-2.7
+//T1:parallel,loop,V:2.7-3.0
 int test1(){
     int err = 0;
     srand(SEED);
 
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
         a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0.0;
     }
 
     #pragma acc parallel
@@ -21,7 +20,7 @@ int test1(){
     }
 
     for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
+        if (a[x] != b[x]){
             err += 1;
             break;
         }

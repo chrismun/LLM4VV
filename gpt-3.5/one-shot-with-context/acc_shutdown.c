@@ -1,49 +1,46 @@
-#ifndef T1
-//T1:shutdown,private,V:2.0-2.7
-int test1(){
+int test_shutdown(){
     int err = 0;
-    srand(SEED);
+    int *a = (int*)malloc(N * sizeof(int));
+    int *b = (int*)malloc(N * sizeof(int));
+    int *c = (int*)malloc(N * sizeof(int));
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-    }
-
-    #pragma acc enter data copyin(a[0:n])
-
-    #pragma acc parallel
+    #pragma acc data copyin(a[0:N]) copyout(b[0:N]) create(c[0:N])
     {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            a[x] *= 2;
+        #pragma acc parallel loop
+        for (int i = 0; i < N; ++i){
+            b[i] = a[i];
+            c[i] = a[i] + b[i];
         }
-    }
-    
-    #pragma acc shutdown(acc_device_nvidia)
 
-    for (int x = 0; x < n; ++x){
-        if (a[x] != 0){
-            err += 1;
+        #pragma acc shutdown_device
+    }
+
+    // Check that all values in c are equal to double the corresponding value in a
+    for (int i = 0; i < N; ++i){
+        if (c[i] != 2 * a[i]){
+            err = 1;
             break;
         }
     }
 
+    free(a);
+    free(b);
+    free(c);
+
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
+
+    #pragma acc init
+
+    int failed = test_shutdown();
     if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-#endif
+
+    #pragma acc shutdown
+
     return failcode;
 }

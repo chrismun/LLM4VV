@@ -1,68 +1,50 @@
-#ifndef T2
-//T2:memcpy,async,devonly,V:1.0-2.7
-int test2(){
+#include "acc_testsuite.h"
+
+#ifndef T1
+// T1: async, data, device
+int test1(){
     int err = 0;
     srand(SEED);
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    // Allocate device memory
+    real_t *dev_data = acc_malloc(N * sizeof(real_t));
+    if (!dev_data) {
+        return 1;
+    }
 
-    real_t * a_copy = (real_t *)acc_malloc(n * sizeof(real_t));
-    real_t * b_copy = (real_t *)acc_malloc(n * sizeof(real_t));
-    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
+    // Initialize device data
+    #pragma acc parallel loop present(dev_data)
+    for (int i = 0; i < N; ++i) {
+        dev_data[i] = i;
+    }
+
+    // Allocate host memory
+    real_t *host_data = (real_t *)malloc(N * sizeof(real_t));
+    if (!host_data) {
+        acc_free(dev_data);
+        return 1;
+    }
+
+    // Perform asynchronous copy from device to host
+    #pragma acc data present(dev_data)
     {
-        #pragma acc parallel 
+        #pragma acc host_data use_device(host_data)
         {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                a[x] = rand() / (real_t)(RAND_MAX / 10);
-                b[x] = 0.0;
-            }
-        }
-        #pragma acc update device(a[0:n]) async
-        #pragma acc parallel 
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                a_copy[x] = a[x];
-            }
-        }
-        #pragma acc update host(b[0:n]) async
-        #pragma acc parallel 
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b_copy[x] = b[x];
-            }
+            acc_memcpy_from_device_async(host_data, dev_data, N * sizeof(real_t), acc_async_sync);
         }
     }
 
-    #pragma acc data copyin(a_copy[0:n])
-    {
-        #pragma acc parallel 
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a_copy[x];
-            }
-        }
-    }
-
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
-            err += 1;
-            break;
-        }
-        if (fabs(a_copy[x] - b_copy[x]) > PRECISION){
-            err += 1;
+    // Validate data
+    for (int i = 0; i < N; ++i) {
+        if (host_data[i] != i) {
+            err = 1;
             break;
         }
     }
 
-    acc_free(a_copy);
-    acc_free(b_copy);
-    free(a);
-    free(b);
+    // Free memory
+    free(host_data);
+    acc_free(dev_data);
 
     return err;
 }
@@ -71,14 +53,16 @@ int test2(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T2
+
+#ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test2();
+        failed = failed + test1();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 1);
+        failcode = failcode + (1 << 0);
     }
 #endif
+
     return failcode;
 }

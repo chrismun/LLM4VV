@@ -1,61 +1,52 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
-#ifndef T1
-// T1: async-test,async,device,V:2.6-2.7
-int test1(){
-    int err = 0;
-    int n = 1000;
+#define SIZE 10000000
 
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
-
-    for (int i = 0; i < n; ++i){
-        a[i] = i;
-        b[i] = 0.0;
+void initialize_array(float *arr, int size) {
+    for (int i = 0; i < size; i++) {
+        arr[i] = i;
     }
-
-    #pragma acc enter data copyin(a[0:n]) create(b[0:n])
-
-    #pragma acc parallel async(1)
-    {
-        #pragma acc loop
-        for (int i = 0; i < n; ++i){
-            b[i] = a[i];
-        }
-    }
-
-    int asyncStatus = acc_async_test(1);
-
-    #pragma acc exit data copyout(b[0:n]) delete(a[0:n])
-
-    if (asyncStatus != 1){
-        err += 1;
-    }
-
-    for (int i = 0; i < n; ++i){
-        if (b[i] != a[i]){
-            err += 1;
-            break;
-        }
-    }
-
-    return err;
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
+int main() {
+    float *a = (float *)malloc(SIZE * sizeof(float));
+    float *b = (float *)malloc(SIZE * sizeof(float));
+    float *c = (float *)malloc(SIZE * sizeof(float));
+    
+    initialize_array(a, SIZE);
+    initialize_array(b, SIZE);
+    
+    // Transfer data to device asynchronously
+    #pragma acc enter data copyin(a[0:SIZE], b[0:SIZE]) async(1)
 
-#ifndef T1
-    failed = 0;
-    for (int i = 0; i < NUM_TEST_CALLS; ++i){
-        failed = failed + test1();
+    // Perform computation on device asynchronously
+    #pragma acc parallel loop async(2)
+    for (int i = 0; i < SIZE; i++) {
+        c[i] = a[i] + b[i];
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
 
-    return failcode;
+    // Wait for the async transfer to complete
+    if (acc_async_test(1)) {
+        printf("Data transfer completed.\n");
+    } else {
+        printf("Data transfer not completed.\n");
+    }
+
+    // Wait for the async kernel computation to complete
+    if (acc_async_test(2)) {
+        printf("Kernel computation completed.\n");
+    } else {
+        printf("Kernel computation not completed.\n");
+    }
+
+    // Free device data
+    #pragma acc exit data delete(a[0:SIZE], b[0:SIZE])
+    
+    free(a);
+    free(b);
+    free(c);
+    
+    return 0;
 }

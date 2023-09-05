@@ -2,25 +2,24 @@
 #include <stdlib.h>
 #include <openacc.h>
 
-#if _OPENACC >= 202011
-int main(){
+int main() {
+    int n = 10;
+    float *a;
+    float *devptr;
+    int i;
 
-    int *host_ptr = (int*) malloc(sizeof(int));
-
-    acc_deviceptr_t dev_ptr = acc_deviceptr(host_ptr);
-
-    if (dev_ptr.device_type == acc_device_current){
-        printf("Device pointer: %p\n", dev_ptr.ptr);
-    }
-    else{
-        printf("Null pointer\n");
+    a = (float *)malloc(n * sizeof(float));
+    for (i = 0; i < n; i++) {
+        a[i] = i + 1;
     }
 
-    free(host_ptr);
+    devptr = (float *)acc_deviceptr(a);
+    if (devptr == NULL) {
+        printf("Device pointer is null\n");
+    } else {
+        printf("Device pointer: %p\n", devptr);
+    }
 
-    return 0;
-}
-#else
-int main(){
-    printf("OpenACC version must be 202011 or higher to support acc_deviceptr.\n");
+    free(a);
+
     return 0;

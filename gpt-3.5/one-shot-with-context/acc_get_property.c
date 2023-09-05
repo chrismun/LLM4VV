@@ -1,13 +1,22 @@
-#include <stdio.h>
-#include <openacc.h>
+#include "acc_testsuite.h"
+#ifndef T1
+//T1:pre,pragma,acc_getproperty,V:2.7-2.7
+//T1:put_property
+int test1(){
+    unsigned int val;
+    const char * str;
 
-int main() {
-    int dev_num = 0; // device number
-    acc_device_t dev_type = acc_device_nvidia; // device type
-    acc_device_property_t property = acc_property_memory; // property to query
-    
-    size_t memory = acc_get_property(dev_num, dev_type, property);
-    
-    printf("Total device memory: %zu bytes\n", memory);
-    
+    #pragma acc parallel
+    {
+        val = acc_get_property(0, acc_device_nvidia, acc_property_memory);
+        if (val == 0){
+            return 1;
+        }
+
+        str = acc_get_property_string(0, acc_device_nvidia, acc_property_name);
+        if (str == NULL){
+            return 1;
+        }
+    }
+
     return 0;

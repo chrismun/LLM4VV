@@ -1,29 +1,37 @@
 #ifndef T1
-//T1:int,if,self,V:1.0-2.7
+//T1:parallel,data,data-region,V:2.7-1.0
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int * a = (int *)malloc(n * sizeof(int));
-    int * b = (int *)malloc(n * sizeof(int));
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
 
     for (int x = 0; x < n; ++x){
-        a[x] = rand() / (int)(RAND_MAX / 10);
-        b[x] = 0;
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        c[x] = 0.0;
     }
 
-    int condition = 1;
-
-    #pragma acc parallel if(condition) self
+    #pragma acc data copyin(a[0:n], b[0:n]) copy(c[0:n])
     {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            b[x] = b[x] + a[x];
+        #pragma acc parallel
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                c[x] = a[x] + b[x];
+            }
+            #pragma acc loop self if(1)
+            for (int x = 0; x < n; ++x){
+                c[x] = c[x] + 1;
+            }
         }
     }
 
     for (int x = 0; x < n; ++x){
-        if (b[x] != a[x]){
+        real_t c_expected = a[x] + b[x];
+        if (fabs(c[x] - c_expected) > PRECISION){
             err += 1;
             break;
         }

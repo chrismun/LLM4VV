@@ -1,19 +1,36 @@
+#include "acc_testsuite.h"
+
 #ifndef T1
-//T1:serial,V:1.0-2.7
+//T1:serial,data,data-region,V:2.7-3.0
 int test1(){
     int err = 0;
+    srand(SEED);
 
-    #pragma acc serial
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
+    }
+
+    #pragma acc data copyin(a[0:n])
     {
-        // Sequential code here
-        int sum = 0;
-        for (int i = 0; i < 10; ++i){
-            sum += i;
+        #pragma acc serial
+        {
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
         }
+    }
 
-        // Verify the result
-        if (sum != 45){
-            err = 1;
+    #pragma acc data copyout(b[0:n])
+    {
+        for (int x = 0; x < n; ++x){
+            if (fabs(a[x] - b[x]) > PRECISION){
+                err += 1;
+                break;
+            }
         }
     }
 
@@ -24,7 +41,6 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
-
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
@@ -34,6 +50,5 @@ int main(){
         failcode = failcode + (1 << 0);
     }
 #endif
-
     return failcode;
 }
