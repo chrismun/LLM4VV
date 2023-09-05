@@ -5,44 +5,50 @@
 #define NUM_TEST_CALLS 10
 #define PRECISION 0.001
 
-int test_wait(void) {
+int test2(){
     int err = 0;
-    int *a = (int *)malloc(sizeof(int) * NUM_TEST_CALLS);
-    int *b = (int *)malloc(sizeof(int) * NUM_TEST_CALLS);
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
-        a[i] = i;
-        b[i] = 0;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    #pragma acc data copyin(a[0:NUM_TEST_CALLS])
+    #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels wait(b[0:NUM_TEST_CALLS])
+        #pragma acc kernels copyout(b[0:n])
         {
             #pragma acc loop
-            for (int i = 0; i < NUM_TEST_CALLS; i++) {
-                b[i] = a[i];
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
             }
         }
     }
 
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
-        if (b[i] != a[i]) {
-            err++;
+    #pragma acc wait
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
         }
     }
 
     return err;
 }
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    failed = test_wait();
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
+#ifndef T2
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
     }
-
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
+    }
+#endif
     return failcode;
 }

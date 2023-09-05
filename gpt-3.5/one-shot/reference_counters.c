@@ -1,36 +1,39 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:parallel,data,data-region,multidata,V:1.0-2.7
+//T1:refcounting,default,V:1.0-2.5
 int test1(){
     int err = 0;
-    srand(SEED);
 
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-    real_t * c = (real_t *)malloc(n * sizeof(real_t));
+    for (int x = 0; x < 50; ++x){
+        real_t * a = (real_t *)malloc(n * sizeof(real_t));
+        real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = rand() / (real_t)(RAND_MAX / 10);
-        c[x] = 0.0;
-    }
+        for (int i = 0; i < n; ++i){
+            a[i] = i;
+            b[i] = 0.0;
+        }
 
-    #pragma acc data copyin(a[0:n], b[0:n])
-    {
-        #pragma acc parallel
+        #pragma acc enter data copyin(a[0:n])    // Increase refcount for a
+
+        #pragma acc data copyout(b[0:n])          // Increase refcount for b
         {
-            #pragma acc loop gang
-            for (int x = 0; x < n; ++x){
-                c[x] += a[x] + b[x];
+            // Do some computations on b
+            for (int i = 0; i < n; ++i){
+                b[i] = 2 * a[i];
             }
         }
-    }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(c[x] - (a[x] + b[x])) > PRECISION){
-            err += 1;
-            break;
+        #pragma acc exit data delete(a[0:n])      // Decrease refcount for a
+
+        // Verify b
+        for (int i = 0; i < n; ++i){
+            if (b[i] != 2 * i){
+                err++;
+                break;
+            }
         }
+
+        free(a);
+        free(b);
     }
 
     return err;

@@ -4,10 +4,11 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.001
+#define PRECISION 0.0001
 
-int test_data_copyin(int n) {
+int test_copyin(void) {
     int err = 0;
+    int n = 100;
     real_t *a = (real_t *)malloc(n * sizeof(real_t));
     real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
@@ -40,11 +41,12 @@ int main() {
     int failcode = 0;
     int failed;
 
+    failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test_data_copyin(10);
-        if (failed != 0) {
-            failcode = failcode + (1 << 0);
-        }
+        failed = failed + test_copyin();
+    }
+    if (failed != 0) {
+        failcode = failcode + (1 << 0);
     }
 
     return failcode;

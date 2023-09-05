@@ -1,49 +1,43 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <openacc.h>
 
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.0001
+int main() {
+    int failcode = 0;
 
-int test_acc_unmap_data(void) {
-    int err = 0;
-    int *a = (int *)malloc(sizeof(int) * 10);
-    int *b = (int *)malloc(sizeof(int) * 10);
-
-    for (int i = 0; i < 10; i++) {
+    // Initialize data
+    int n = 100;
+    real_t *a = (real_t *)malloc(n * sizeof(real_t));
+    real_t *b = (real_t *)malloc(n * sizeof(real_t));
+    for (int i = 0; i < n; i++) {
         a[i] = i;
         b[i] = 0;
     }
 
-    #pragma acc data copyin(a[0:10])
+    // Map data to device
+    #pragma acc enter data copyin(a[0:n], b[0:n])
+
+    // Perform computation on device
+    #pragma acc kernels
     {
-        #pragma acc kernels copyout(b[0:10])
-        {
-            #pragma acc loop
-            for (int i = 0; i < 10; i++) {
-                b[i] = a[i];
-            }
+        #pragma acc loop
+        for (int i = 0; i < n; i++) {
+            b[i] = a[i] + 1;
         }
     }
 
-    for (int i = 0; i < 10; i++) {
-        if (fabs(b[i] - a[i]) > PRECISION) {
-            err++;
+    // Unmap data from device
+    #pragma acc exit data delete(a[0:n], b[0:n])
+
+    // Verify results
+    for (int i = 0; i < n; i++) {
+        if (fabs(b[i] - (a[i] + 1)) > PRECISION) {
+            failcode = 1;
+            break;
         }
     }
 
-    return err;
-}
-
-int main() {
-    int failcode = 0;
-    int failed;
-
-    failed = test_acc_unmap_data();
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
-    }
+    // Clean up
+    free(a);
+    free(b);
 
     return failcode;
 }

@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <openacc.h>
 
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.00001
+#define NUM_TEST_CALLS 100
+#define PRECISION 0.0001
 
 int test_atomic_add(int *a, int *b, int n) {
     int err = 0;
@@ -13,14 +13,9 @@ int test_atomic_add(int *a, int *b, int n) {
         {
             #pragma acc loop
             for (int i = 0; i < n; i++) {
-                #pragma acc atomic
+                #pragma acc atomic update
                 a[i] += b[i];
             }
-        }
-    }
-    for (int i = 0; i < n; i++) {
-        if (fabs(a[i] - (b[i] + b[i])) > PRECISION) {
-            err++;
         }
     }
     return err;
@@ -34,14 +29,9 @@ int test_atomic_sub(int *a, int *b, int n) {
         {
             #pragma acc loop
             for (int i = 0; i < n; i++) {
-                #pragma acc atomic
+                #pragma acc atomic update
                 a[i] -= b[i];
             }
-        }
-    }
-    for (int i = 0; i < n; i++) {
-        if (fabs(a[i] - (b[i] - b[i])) > PRECISION) {
-            err++;
         }
     }
     return err;
@@ -55,14 +45,9 @@ int test_atomic_mul(int *a, int *b, int n) {
         {
             #pragma acc loop
             for (int i = 0; i < n; i++) {
-                #pragma acc atomic
+                #pragma acc atomic update
                 a[i] *= b[i];
             }
-        }
-    }
-    for (int i = 0; i < n; i++) {
-        if (fabs(a[i] - (b[i] * b[i])) > PRECISION) {
-            err++;
         }
     }
     return err;
@@ -76,14 +61,9 @@ int test_atomic_div(int *a, int *b, int n) {
         {
             #pragma acc loop
             for (int i = 0; i < n; i++) {
-                #pragma acc atomic
+                #pragma acc atomic update
                 a[i] /= b[i];
             }
-        }
-    }
-    for (int i = 0; i < n; i++) {
-        if (fabs(a[i] - (b[i] / b[i])) > PRECISION) {
-            err++;
         }
     }
     return err;

@@ -4,35 +4,34 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.001
+#define PRECISION 0.0001
 
-int test_routine(int n, real_t *a, real_t *b) {
+int test_routine(int n, int *a, int *b) {
     int err = 0;
-    #pragma acc routine(test_routine)
+    int i;
+
+    #pragma acc routine(routine_name)
     {
-        #pragma acc kernels
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x) {
-                b[x] = a[x];
-            }
+        #pragma acc loop
+        for (i = 0; i < n; i++) {
+            a[i] = b[i];
         }
     }
+
     return err;
 }
 
 int main() {
     int failcode = 0;
     int failed;
-    real_t *a, *b;
-    int n = 100;
 
-    a = (real_t *)malloc(n * sizeof(real_t));
-    b = (real_t *)malloc(n * sizeof(real_t));
+    int n = 10;
+    int a[n];
+    int b[n];
 
-    for (int x = 0; x < n; ++x) {
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0;
+    for (int i = 0; i < n; i++) {
+        a[i] = i;
+        b[i] = i;
     }
 
     failed = test_routine(n, a, b);
@@ -40,9 +39,6 @@ int main() {
     if (failed != 0) {
         failcode = failcode + (1 << 0);
     }
-
-    free(a);
-    free(b);
 
     return failcode;
 }

@@ -1,4 +1,3 @@
-#include "acc_testsuite.h"
 #ifndef T1
 //T1:parallel,data,data-region,async,V:1.0-2.7
 int test1(){
@@ -13,18 +12,25 @@ int test1(){
         b[x] = 0.0;
     }
 
+    // Create an async handle
+    acc_async_handle_t async_handle;
+
     #pragma acc data copyin(a[0:n])
     {
-        #pragma acc parallel async
+        #pragma acc parallel copyout(b[0:n])
         {
-            #pragma acc loop
+            // Assign the async handle to a value
+            async_handle = acc_async_noval;
+
+            #pragma acc loop async(async_handle)
             for (int x = 0; x < n; ++x){
                 b[x] = a[x];
             }
         }
     }
 
-    #pragma acc wait
+    // Wait for the completion of the async region
+    acc_wait_all(async_handle);
 
     for (int x = 0; x < n; ++x){
         if (fabs(a[x] - b[x]) > PRECISION){

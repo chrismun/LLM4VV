@@ -4,33 +4,18 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.00001
+#define PRECISION 0.001
 
 int test_acc_get_default_async(int async) {
     int err = 0;
-    int *a = (int *)malloc(sizeof(int) * 10);
-    int *b = (int *)malloc(sizeof(int) * 10);
+    int device_type = acc_get_device_type();
+    int device_num = acc_get_device_num(device_type);
+    acc_set_device_num(device_type, device_num, async);
 
-    for (int i = 0; i < 10; i++) {
-        a[i] = i;
-        b[i] = 0;
-    }
-
-    #pragma acc data copyin(a[0:10]) copyout(b[0:10])
-    {
-        #pragma acc kernels async(async)
-        {
-            #pragma acc loop
-            for (int i = 0; i < 10; i++) {
-                b[i] = a[i];
-            }
-        }
-    }
-
-    for (int i = 0; i < 10; i++) {
-        if (fabs(b[i] - a[i]) > PRECISION) {
-            err++;
-        }
+    int default_async = acc_get_default_async();
+    if (default_async != async) {
+        printf("Error: acc_get_default_async() returned %d, expected %d\n", default_async, async);
+        err++;
     }
 
     return err;
@@ -40,17 +25,11 @@ int main() {
     int failcode = 0;
     int failed;
 
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
-        failed = test_acc_get_default_async(i % 2);
+    for (int x = 0; x < NUM_TEST_CALLS; x++) {
+        failed = test_acc_get_default_async(x % 2);
         if (failed != 0) {
-            failcode = failcode + (1 << i);
+            failcode = failcode + (1 << x);
         }
-    }
-
-    if (failcode != 0) {
-        printf("Test failed with failcode %d\n", failcode);
-    } else {
-        printf("Test passed\n");
     }
 
     return failcode;

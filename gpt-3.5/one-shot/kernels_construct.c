@@ -1,6 +1,5 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:kernels,loop,loop,V:2.5-2.7
+//T1:kernels,data,data-region,V:2.5-2.7
 int test1(){
     int err = 0;
     srand(SEED);
@@ -15,11 +14,14 @@ int test1(){
         c[x] = 0.0;
     }
 
-    #pragma acc kernels
+    #pragma acc data copyin(a[0:n], b[0:n]) copyout(c[0:n])
     {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            c[x] = a[x] + b[x];
+        #pragma acc kernels
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                c[x] = a[x] + b[x];
+            }
         }
     }
 

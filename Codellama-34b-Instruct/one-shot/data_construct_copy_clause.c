@@ -4,48 +4,47 @@
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define PRECISION 0.00001
+#define PRECISION 0.0001
+
+int test_data_copy(int n) {
+    int err = 0;
+    real_t *a = (real_t *)malloc(n * sizeof(real_t));
+    real_t *b = (real_t *)malloc(n * sizeof(real_t));
+
+    for (int x = 0; x < n; ++x) {
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+    }
+
+    #pragma acc data copy(a[0:n], b[0:n])
+    {
+        #pragma acc kernels
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x) {
+                b[x] = a[x];
+            }
+        }
+    }
+
+    for (int x = 0; x < n; ++x) {
+        if (fabs(b[x] - a[x]) > PRECISION) {
+            err += 1;
+        }
+    }
+
+    return err;
+}
 
 int main() {
     int failcode = 0;
     int failed;
 
-    // Test 1: data construct copy clause
-    failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        int err = 0;
-        real_t *a = (real_t *)malloc(n * sizeof(real_t));
-        real_t *b = (real_t *)malloc(n * sizeof(real_t));
-
-        for (int i = 0; i < n; ++i) {
-            a[i] = rand() / (real_t)(RAND_MAX / 10);
-            b[i] = 0;
+        failed = test_data_copy(10);
+        if (failed != 0) {
+            failcode = failcode + (1 << 0);
         }
-
-        #pragma acc data copy(a[0:n], b[0:n])
-        {
-            #pragma acc kernels
-            {
-                #pragma acc loop
-                for (int i = 0; i < n; ++i) {
-                    b[i] = a[i];
-                }
-            }
-        }
-
-        for (int i = 0; i < n; ++i) {
-            if (fabs(b[i] - a[i]) > PRECISION) {
-                err += 1;
-            }
-        }
-
-        if (err > 0) {
-            failed += 1;
-        }
-    }
-
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
     }
 
     return failcode;

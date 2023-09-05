@@ -1,25 +1,18 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <openacc.h>
 
-#define NUM_TEST_CALLS 10
-
 int main() {
-    int failcode = 0;
-    int failed;
+    int device_type;
+    acc_get_device_type(&device_type);
 
-    // Test 1: acc get device type
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        int device_type = acc_get_device_type();
-        if (device_type != ACC_DEVICE_TYPE_GPU) {
-            failed++;
-        }
-    }
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
+    if (device_type == ACC_DEVICE_TYPE_CPU) {
+        printf("Device type is CPU\n");
+    } else if (device_type == ACC_DEVICE_TYPE_GPU) {
+        printf("Device type is GPU\n");
+    } else if (device_type == ACC_DEVICE_TYPE_ACCELERATOR) {
+        printf("Device type is accelerator\n");
+    } else {
+        printf("Device type is unknown\n");
     }
 
-    return failcode;
+    return 0;
 }

@@ -1,6 +1,5 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:parallel,data,data-region,V:1.0-2.7
+//T1:data,data-region,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
@@ -15,11 +14,14 @@ int test1(){
 
     #pragma acc data copyin(a[0:n])
     {
-        #pragma acc parallel
+        #pragma acc data copyin(b[0:n]) copyout(b[0:n]) acc_on_device(acc_default_async)
         {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
+            #pragma acc parallel
+            {
+                #pragma acc loop
+                for (int x = 0; x < n; ++x){
+                    b[x] = a[x];
+                }
             }
         }
     }

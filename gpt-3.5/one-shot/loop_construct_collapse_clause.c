@@ -1,24 +1,32 @@
-#include "acc_testsuite.h"
-#ifndef T3
-//T3:parallel,loop,collapse,V:2.0-2.7
-int test3(int *a, int *b, int *c, int loopCount){
+#ifndef T1
+//T1:parallel,data,data-region,loop,collapse,V:2.7
+int test1(){
     int err = 0;
+    srand(SEED);
 
-    for (int x = 0; x < loopCount; ++x){
-        a[x] = x;
-        b[x] = x;
-        c[x] = 0;
+    real_t * a = (real_t *)malloc(m * n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(m * n * sizeof(real_t));
+
+    for (int x = 0; x < m * n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
-    #pragma acc parallel loop collapse(2) present(a[0:loopCount], b[0:loopCount], c[0:loopCount])
-    for (int x = 0; x < loopCount; ++x){
-        for (int y = 0; y < loopCount; ++y){
-            c[x] += a[x] * b[y];
+    #pragma acc data copyin(a[0:m*n])
+    {
+        #pragma acc parallel
+        {
+            #pragma acc loop collapse(2)
+            for (int i = 0; i < m; ++i){
+                for (int j = 0; j < n; ++j){
+                    b[i * n + j] = a[i * n + j];
+                }
+            }
         }
     }
 
-    for (int x = 0; x < loopCount; ++x){
-        if (c[x] != x*(x*loopCount)){
+    for (int x = 0; x < m * n; ++x){
+        if (fabs(a[x] - b[x]) > PRECISION){
             err += 1;
             break;
         }
@@ -31,24 +39,14 @@ int test3(int *a, int *b, int *c, int loopCount){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T3
-    int loopCount = 512;
-    int *a = (int *)malloc(loopCount * sizeof(int));
-    int *b = (int *)malloc(loopCount * sizeof(int));
-    int *c = (int *)malloc(loopCount * sizeof(int));
-
+#ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test3(a, b, c, loopCount);
+        failed = failed + test1();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 2);
+        failcode = failcode + (1 << 0);
     }
-
-    free(a);
-    free(b);
-    free(c);
-
 #endif
     return failcode;
 }

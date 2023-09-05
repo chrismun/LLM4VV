@@ -1,29 +1,9 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:init,V:1.0-2.7
+//T1:parallel,data,data-region,V:1.0-2.7
 int test1(){
     int err = 0;
-    srand(SEED);
 
-    int * a = (int *)malloc(n * sizeof(int));
-
-    #pragma acc data copyout(a[0:n])
-    {
-        #pragma acc init
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                a[x] = 0;
-            }
-        }
-    }
-
-    for (int x = 0; x < n; ++x){
-        if (a[x] != 0){
-            err += 1;
-            break;
-        }
-    }
+    #pragma acc init
 
     return err;
 }

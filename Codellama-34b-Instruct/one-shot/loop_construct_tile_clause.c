@@ -1,50 +1,52 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <openacc.h>
 
-#ifndef T1
-//T1:kernels,data,data-region,V:1.0-2.7
-int test1(){
+#define NUM_TEST_CALLS 10
+#define TILE_SIZE 16
+
+int test_loop_tile(int n) {
     int err = 0;
-    srand(SEED);
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    int *a = (int *)malloc(n * sizeof(int));
+    int *b = (int *)malloc(n * sizeof(int));
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0;
+    for (int i = 0; i < n; i++) {
+        a[i] = i;
+        b[i] = 0;
     }
 
-    #pragma acc data copyin(a[0:n])
+    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
     {
-        #pragma acc kernels copyout(b[0:n])
-        {
-            #pragma acc loop tile(16)
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
+        #pragma acc kernels loop tile(TILE_SIZE)
+        for (int i = 0; i < n; i++) {
+            b[i] = a[i];
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - a[x]) > PRECISION){
-            err += 1;
+    for (int i = 0; i < n; i++) {
+        if (b[i] != a[i]) {
+            err++;
         }
     }
+
+    free(a);
+    free(b);
 
     return err;
 }
-#endif
 
-int main(){
+int main() {
     int failcode = 0;
     int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+
+    for (int i = 0; i < NUM_TEST_CALLS; i++) {
+        failed = test_loop_tile(i);
+        if (failed != 0) {
+            failcode = failcode + (1 << i);
+        }
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
+
     return failcode;
 }
