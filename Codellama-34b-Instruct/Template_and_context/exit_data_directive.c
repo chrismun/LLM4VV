@@ -6,26 +6,32 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a random array of integers
-    int* data = (int*)malloc(sizeof(int) * 10);
-    for (int i = 0; i < 10; i++) {
-        data[i] = rand();
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
+    int *c = (int *)malloc(sizeof(int) * 10);
+
+    #pragma acc enter data copyin(a[0:10], b[0:10], c[0:10])
+    {
+        #pragma acc parallel loop
+        for (int i = 0; i < 10; i++) {
+            a[i] = i;
+            b[i] = i * 2;
+            c[i] = i * 3;
+        }
     }
 
-    // Create an OpenACC region with the exit data directive
-    #pragma acc enter data copyin(data[0:10])
-    #pragma acc exit data delete(data[0:10])
+    #pragma acc exit data delete(a[0:10], b[0:10], c[0:10])
 
-    // Check that the data has been deleted
     for (int i = 0; i < 10; i++) {
-        if (data[i] != 0) {
+        if (a[i] != i || b[i] != i * 2 || c[i] != i * 3) {
             err = 1;
             break;
         }
     }
 
-    // Free the memory
-    free(data);
+    free(a);
+    free(b);
+    free(c);
 
     return err;
 }

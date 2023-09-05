@@ -6,16 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Set up the loop construct with the collapse clause
-    #pragma acc parallel loop collapse(2)
-    for (int i = 0; i < 360; i++) {
-        for (int j = 0; j < N; j++) {
-            // Do something
-        }
+    // Create a device array
+    int *dev_array;
+    acc_attach(dev_array, sizeof(int) * 10);
+
+    // Fill the device array with random values
+    for (int i = 0; i < 10; i++) {
+        dev_array[i] = rand();
     }
 
-    // Check if the collapse clause was applied correctly
-    if (acc_get_num_gangs(acc_get_device_type()) != 2) {
+    // Detach the device array
+    acc_detach(dev_array);
+
+    // Check that the device array is no longer attached
+    if (acc_is_attached(dev_array)) {
         err = 1;
     }
 

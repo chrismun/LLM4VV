@@ -6,14 +6,8 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    #pragma acc parallel loop independent
-    for (int i = 0; i < 10; i++) {
-        int a = rand() % 10;
-        int b = rand() % 10;
-        int c = a + b;
-        if (c != a + b) {
-            err = 1;
-        }
+    if (acc_set_device_type(ACC_DEVICE_TYPE_GPU) != ACC_SUCCESS) {
+        err = 1;
     }
 
     return err;

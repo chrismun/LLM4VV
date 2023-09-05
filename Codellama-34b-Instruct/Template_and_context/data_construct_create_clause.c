@@ -6,23 +6,31 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int* a = (int*)malloc(sizeof(int));
-    int* b = (int*)malloc(sizeof(int));
+    // Create a new array on the device
+    int *arr = (int *)acc_malloc(sizeof(int) * 10);
 
-    #pragma acc enter data create(a, b)
-    {
-        a[0] = 1;
-        b[0] = 2;
+    // Initialize the array with random values
+    for (int i = 0; i < 10; i++) {
+        arr[i] = rand();
     }
 
-    #pragma acc exit data delete(a, b)
+    // Create a new array on the host
+    int *arr_host = (int *)malloc(sizeof(int) * 10);
 
-    if (a[0] != 1 || b[0] != 2) {
-        err = 1;
+    // Copy the array from the device to the host
+    acc_memcpy(arr_host, arr, sizeof(int) * 10);
+
+    // Check that the arrays are equal
+    for (int i = 0; i < 10; i++) {
+        if (arr_host[i] != arr[i]) {
+            err = 1;
+            break;
+        }
     }
 
-    free(a);
-    free(b);
+    // Free the arrays
+    acc_free(arr);
+    free(arr_host);
 
     return err;
 }

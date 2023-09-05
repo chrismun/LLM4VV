@@ -1,33 +1,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <acc_testsuite.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+#define ACC_DEFAULT_ASYNC_VAR 0
+#define ACC_DEVICE_NUM_VAR 1
+#define ACC_DEVICE_TYPE_VAR 2
 
-    if(){
-        err = 1;
+#define ACC_ASYNC_DEFAULT 0
+#define ACC_ASYNC_SYNC 1
+#define ACC_ASYNC_NONE 2
+
+#define ACC_DEVICE_TYPE_CPU 0
+#define ACC_DEVICE_TYPE_GPU 1
+#define ACC_DEVICE_TYPE_ACCELERATOR 2
+
+#define ACC_DEVICE_NUM_DEFAULT 0
+
+#define ACC_ERROR_DEVICE_TYPE_UNAVAILABLE 1
+#define ACC_ERROR_DEVICE_UNAVAILABLE 2
+#define ACC_ERROR_INVALID_ASYNC 3
+
+#define ACC_SUCCESS 0
+
+int acc_set_default_async(int async) {
+    if (async == ACC_ASYNC_DEFAULT) {
+        ACC_DEFAULT_ASYNC_VAR = ACC_ASYNC_DEFAULT;
+    } else if (async == ACC_ASYNC_SYNC) {
+        ACC_DEFAULT_ASYNC_VAR = ACC_ASYNC_SYNC;
+    } else if (async == ACC_ASYNC_NONE) {
+        ACC_DEFAULT_ASYNC_VAR = ACC_ASYNC_NONE;
+    } else {
+        return ACC_ERROR_INVALID_ASYNC;
     }
-
-    return err;
+    return ACC_SUCCESS;
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+int acc_set_device_num(int device_num) {
+    if (device_num < 0) {
+        return ACC_ERROR_DEVICE_UNAVAILABLE;
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+    ACC_DEVICE_NUM_VAR = device_num;
+    return ACC_SUCCESS;
+}
+
+int acc_set_device_type(int device_type) {
+    if (device_type < 0 || device_type > ACC_DEVICE_TYPE_ACCELERATOR) {
+        return ACC_ERROR_DEVICE_TYPE_UNAVAILABLE;
     }
-#endif
-    return failcode;
+    ACC_DEVICE_TYPE_VAR = device_type;
+    return ACC_SUCCESS;
+}
+
+int main() {
+    int async = ACC_ASYNC_DEFAULT;
+    int device_num = ACC_DEVICE_NUM_DEFAULT;
+    int device_type = ACC_DEVICE_TYPE_CPU;
+
+    // Set default async
+    acc_set_default_async(async);
+
+    // Set device num
+    acc_set_device_num(device_num);
+
+    // Set device type
+    acc_set_device_type(device_type);
+
+    return 0;
 }

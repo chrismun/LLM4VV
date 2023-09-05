@@ -9,11 +9,7 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Shut down all available devices
-    #pragma acc shutdown
-
-    // Check if any devices are still connected
-    if (acc_get_num_devices() > 0) {
+    if(acc_shutdown(ACC_DEVICE_TYPE_GPU) != ACC_SUCCESS){
         err = 1;
     }
 

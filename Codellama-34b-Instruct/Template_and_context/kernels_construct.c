@@ -6,17 +6,9 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Set up the loop construct with the collapse clause
-    #pragma acc parallel loop collapse(2)
-    for (int i = 0; i < 360; i++) {
-        for (int j = 0; j < N; j++) {
-            // Do something
-        }
-    }
-
-    // Check if the collapse clause was applied correctly
-    if (acc_get_num_gangs(acc_get_device_type()) != 2) {
-        err = 1;
+    #pragma acc kernels
+    {
+        // Kernel code goes here
     }
 
     return err;

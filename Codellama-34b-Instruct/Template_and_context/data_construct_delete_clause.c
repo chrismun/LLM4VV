@@ -6,24 +6,19 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int* a = (int*)malloc(sizeof(int));
-    int* b = (int*)malloc(sizeof(int));
-    int* c = (int*)malloc(sizeof(int));
+    int* var = (int*)malloc(sizeof(int));
+    *var = 1;
 
-    #pragma acc enter data copyin(a[0:10], b[0:10], c[0:10])
-
-    #pragma acc parallel loop
-    for (int i = 0; i < 10; i++) {
-        a[i] = i;
-        b[i] = i;
-        c[i] = i;
+    #pragma acc enter data copyin(var)
+    {
+        #pragma acc delete var
     }
 
-    #pragma acc exit data delete(a[0:10], b[0:10], c[0:10])
+    if (*var != 0) {
+        err = 1;
+    }
 
-    free(a);
-    free(b);
-    free(c);
+    free(var);
 
     return err;
 }

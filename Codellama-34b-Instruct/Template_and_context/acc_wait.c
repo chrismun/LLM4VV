@@ -6,9 +6,25 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    if(){
+    // Create an async queue
+    acc_async_queue_t queue;
+    acc_async_queue_create(&queue);
+
+    // Create an async operation
+    acc_async_operation_t operation;
+    acc_async_operation_create(&operation, queue);
+
+    // Wait for the async operation to complete
+    acc_wait(operation);
+
+    // Check if the async operation completed successfully
+    if (acc_async_operation_status(operation) != ACC_ASYNC_OPERATION_COMPLETE) {
         err = 1;
     }
+
+    // Clean up the async queue and operation
+    acc_async_queue_destroy(queue);
+    acc_async_operation_destroy(operation);
 
     return err;
 }

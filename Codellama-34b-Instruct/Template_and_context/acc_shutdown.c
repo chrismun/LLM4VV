@@ -3,46 +3,55 @@
 #include <string.h>
 #include <acc_testsuite.h>
 
-#define NUM_TEST_CALLS 10
-#define SEED 12345
-
-int test1() {
+#ifndef T1
+//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize the runtime
-    acc_init(acc_device_default);
-
-    // Create a device
-    acc_device_t dev_type = acc_device_default;
-    int dev_num = acc_get_device_num(dev_type);
-
-    // Shut down the device
-    acc_shutdown(dev_type);
-
-    // Check that the device is no longer available
-    if (acc_get_device_num(dev_type) != -1) {
+    if(){
         err = 1;
     }
 
-    // Free the device
-    acc_free(dev_num);
-
     return err;
 }
+#endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    // Run the test
+#ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
     }
-    if (failed != 0) {
+    if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-
+#endif
     return failcode;
+}
+
+void acc_shutdown(acc_device_t dev_type){
+    // Shut down the connection to the specified device
+    acc_device_t device = acc_get_device(dev_type);
+    if (device == NULL) {
+        // Device not found
+        return;
+    }
+    acc_shutdown_device(device);
+}
+
+void acc_shutdown_device(int dev_num, acc_device_t dev_type){
+    // Shut down the connection to the specified device
+    acc_device_t device = acc_get_device(dev_type);
+    if (device == NULL) {
+        // Device not found
+        return;
+    }
+    if (dev_num < 0 || dev_num >= device->num_devices) {
+        // Invalid device number
+        return;
+    }
+    acc_shutdown_device(device->devices[dev_num]);
 }

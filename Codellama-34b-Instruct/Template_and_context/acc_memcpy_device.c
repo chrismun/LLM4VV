@@ -1,5 +1,4 @@
-#include <stdlib.h>
-#include <string.h>
+#include "acc_testsuite.h"
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -39,21 +38,17 @@ void acc_memcpy_device(d_void *data_dev_dest, d_void *data_dev_src, size_t bytes
         return;
     }
 
-    if (data_dev_dest == NULL || data_dev_src == NULL) {
-        acc_error("acc_memcpy_device: Invalid null pointer");
+    if (data_dev_dest < data_dev_src) {
+        // Overlapping memory regions
         return;
     }
 
-    if (bytes > acc_get_device_memory_size(data_dev_dest)) {
-        acc_error("acc_memcpy_device: Invalid memory size");
+    if (data_dev_src < data_dev_dest) {
+        // Overlapping memory regions
         return;
     }
 
-    if (bytes > acc_get_device_memory_size(data_dev_src)) {
-        acc_error("acc_memcpy_device: Invalid memory size");
-        return;
-    }
-
+    // Copy data from data_dev_src to data_dev_dest
     memcpy(data_dev_dest, data_dev_src, bytes);
 }
 
@@ -66,20 +61,16 @@ void acc_memcpy_device_async(d_void *data_dev_dest, d_void *data_dev_src, size_t
         return;
     }
 
-    if (data_dev_dest == NULL || data_dev_src == NULL) {
-        acc_error("acc_memcpy_device_async: Invalid null pointer");
+    if (data_dev_dest < data_dev_src) {
+        // Overlapping memory regions
         return;
     }
 
-    if (bytes > acc_get_device_memory_size(data_dev_dest)) {
-        acc_error("acc_memcpy_device_async: Invalid memory size");
+    if (data_dev_src < data_dev_dest) {
+        // Overlapping memory regions
         return;
     }
 
-    if (bytes > acc_get_device_memory_size(data_dev_src)) {
-        acc_error("acc_memcpy_device_async: Invalid memory size");
-        return;
-    }
-
-    acc_async_memcpy(data_dev_dest, data_dev_src, bytes, async_arg);
+    // Copy data from data_dev_src to data_dev_dest asynchronously
+    memcpy_async(data_dev_dest, data_dev_src, bytes, async_arg);
 }

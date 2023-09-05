@@ -6,7 +6,7 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    if (acc_get_device_type() == acc_device_host){
+    if (acc_get_device_type() == acc_device_current){
         // The region will execute on the current device
         err = 1;
     } else {

@@ -1,58 +1,64 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <openacc.h>
+#include "acc_testsuite.h"
 
-#define NUM_TEST_CALLS 10
-#define SEED 12345
-
+#ifndef T1
+//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a shared memory region
-    acc_init(acc_device_host);
+    int* data = (int*)malloc(sizeof(int));
+    int* present_data = (int*)malloc(sizeof(int));
 
-    // Create a pointer to a variable in shared memory
-    int *var = (int *)acc_malloc(sizeof(int));
-
-    // Set the value of the variable in shared memory
-    *var = 123;
-
-    // Create a present clause
-    acc_present(var);
-
-    // Check if the variable is in shared memory
-    if (acc_is_present(var)) {
-        printf("Variable is in shared memory\n");
-    } else {
-        printf("Variable is not in shared memory\n");
-        err = 1;
+    // Initialize data and present_data
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
+        present_data[i] = i;
     }
 
-    // Free the memory allocated for the variable
-    acc_free(var);
+    // Use the present clause to ensure that data is present in the current device memory
+    #pragma acc present(data)
+    {
+        // Perform some computation on data
+        for (int i = 0; i < 10; i++) {
+            data[i] += 1;
+        }
+    }
+
+    // Use the present clause to ensure that present_data is present in the current device memory
+    #pragma acc present(present_data)
+    {
+        // Perform some computation on present_data
+        for (int i = 0; i < 10; i++) {
+            present_data[i] += 1;
+        }
+    }
+
+    // Check that data and present_data are equal
+    for (int i = 0; i < 10; i++) {
+        if (data[i] != present_data[i]) {
+            err = 1;
+            break;
+        }
+    }
+
+    free(data);
+    free(present_data);
 
     return err;
 }
+#endif
 
 int main(){
     int failcode = 0;
     int failed;
-
-    // Run the test multiple times
+#ifndef T1
+    failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = test1();
-        if (failed != 0){
-            failcode = failcode + (1 << x);
-        }
+        failed = failed + test1();
     }
-
-    // Print the result
-    if (failcode == 0){
-        printf("All tests passed\n");
-    } else {
-        printf("Some tests failed\n");
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
     }
-
+#endif
     return failcode;
 }

@@ -1,33 +1,17 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <acc_testsuite.h>
+#include <openacc.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
-    int err = 0;
-    srand(SEED);
+void acc_set_default_async(int async_arg) {
+    acc_async_var_t async_var;
+    int async_arg_val;
 
-    if (acc_set_default_async(acc_async_noval) != acc_async_noval) {
-        err = 1;
+    // Check if the async_arg is a valid async-argument value
+    if (async_arg < 0 || async_arg > ACC_ASYNC_MAX) {
+        acc_error_invalid_async(async_arg);
+        return;
     }
 
-    return err;
-}
-#endif
-
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+    // Set the default asynchronous activity queue to the specified queue
+    async_var = acc_async_var_create(async_arg);
+    async_arg_val = acc_async_var_get(async_var);
+    acc_set_default_async_var(async_arg_val);
 }

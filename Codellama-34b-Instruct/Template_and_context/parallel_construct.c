@@ -1,20 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <openacc.h>
 
 #define NUM_TEST_CALLS 10
-#define SEED 12345
 
 int test1() {
     int err = 0;
     srand(SEED);
 
-    // Create a parallel region with 4 gangs and 2 workers per gang
-    #pragma acc parallel num_gangs(4) num_workers(2)
+    #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1) device_type(acc_device_default)
     {
-        // Print a message from each worker
-        printf("Hello from worker %d in gang %d\n", acc_get_worker_id(), acc_get_gang_id());
+        int i = 0;
+        for (i = 0; i < 10; i++) {
+            printf("Gang %d, Worker %d, Vector %d: %d\n", acc_get_gang_id(), acc_get_worker_id(), acc_get_vector_id(), i);
+        }
     }
 
     return err;
@@ -24,11 +23,11 @@ int main() {
     int failcode = 0;
     int failed;
 
-    // Run the test 10 times
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test1();
-        if (failed != 0) {
-            failcode = failcode + (1 << x);
+    #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1) device_type(acc_device_default)
+    {
+        int i = 0;
+        for (i = 0; i < 10; i++) {
+            printf("Gang %d, Worker %d, Vector %d: %d\n", acc_get_gang_id(), acc_get_worker_id(), acc_get_vector_id(), i);
         }
     }
 

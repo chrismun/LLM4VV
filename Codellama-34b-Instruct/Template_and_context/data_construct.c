@@ -6,9 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    if(){
-        err = 1;
-    }
+    // Create a new device memory space
+    int *dev_ptr = (int *)acc_malloc(sizeof(int));
+
+    // Copy data from local memory to device memory
+    acc_memcpy_to_device(dev_ptr, &x, sizeof(int));
+
+    // Execute a kernel on the device
+    acc_kernel_launch(dev_ptr, sizeof(int));
+
+    // Copy data from device memory to local memory
+    acc_memcpy_from_device(dev_ptr, &x, sizeof(int));
+
+    // Free device memory
+    acc_free(dev_ptr);
 
     return err;
 }

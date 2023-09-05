@@ -1,32 +1,32 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <acc_testsuite.h>
+#include <stdio.h>
+#include <openacc.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
+#define NUM_TEST_CALLS 10
+
+int test1() {
     int err = 0;
     srand(SEED);
 
-    // Create a random data section
-    int data_size = rand() % 1000 + 1;
-    char* data = (char*)malloc(data_size);
-    for (int i = 0; i < data_size; i++) {
-        data[i] = rand() % 256;
+    // Allocate some memory on the host
+    int *host_data = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        host_data[i] = i;
     }
 
-    // Copy the data to the device memory
-    char* device_data = (char*)acc_copyin(data, data_size);
+    // Copy the data to the device using acc_copyin
+    int *device_data = (int *)acc_copyin(host_data, sizeof(int) * 10);
     if (device_data == NULL) {
+        printf("acc_copyin failed\n");
         err = 1;
     }
 
-    // Verify that the data has been copied correctly
-    for (int i = 0; i < data_size; i++) {
-        if (device_data[i] != data[i]) {
+    // Verify that the data was copied correctly
+    for (int i = 0; i < 10; i++) {
+        if (device_data[i] != host_data[i]) {
+            printf("Data mismatch at index %d: expected %d, got %d\n", i, host_data[i], device_data[i]);
             err = 1;
-            break;
         }
     }
 
@@ -35,19 +35,17 @@ int test1(){
 
     return err;
 }
-#endif
 
-int main(){
+int main() {
     int failcode = 0;
     int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+
+    for (int x = 0; x < NUM_TEST_CALLS; x++) {
+        failed = test1();
+        if (failed) {
+            failcode = failcode + (1 << x);
+        }
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
+
     return failcode;
 }

@@ -6,24 +6,34 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int* a = (int*)malloc(sizeof(int));
-    int* b = (int*)malloc(sizeof(int));
-    int* c = (int*)malloc(sizeof(int));
+    int *a = (int *)malloc(10 * sizeof(int));
+    int *b = (int *)malloc(10 * sizeof(int));
 
-    #pragma acc data copyout(a, b, c)
+    #pragma acc data copyout(a[0:10])
     {
-        a[0] = 1;
-        b[0] = 2;
-        c[0] = 3;
+        #pragma acc parallel loop
+        for (int i = 0; i < 10; i++) {
+            a[i] = i;
+        }
     }
 
-    if (a[0] != 1 || b[0] != 2 || c[0] != 3) {
-        err = 1;
+    #pragma acc data copyout(b[0:10])
+    {
+        #pragma acc parallel loop
+        for (int i = 0; i < 10; i++) {
+            b[i] = i;
+        }
+    }
+
+    for (int i = 0; i < 10; i++) {
+        if (a[i] != b[i]) {
+            err = 1;
+            break;
+        }
     }
 
     free(a);
     free(b);
-    free(c);
 
     return err;
 }

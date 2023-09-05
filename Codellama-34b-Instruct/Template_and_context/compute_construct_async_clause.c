@@ -7,23 +7,38 @@ int test1(){
     srand(SEED);
 
     // Create a data array
-    int data[10];
-    for (int i = 0; i < 10; i++) {
+    int data[100];
+    for (int i = 0; i < 100; i++) {
         data[i] = i;
     }
 
+    // Create a device array
+    int device_data[100];
+    for (int i = 0; i < 100; i++) {
+        device_data[i] = i;
+    }
+
+    // Create a host array
+    int host_data[100];
+    for (int i = 0; i < 100; i++) {
+        host_data[i] = i;
+    }
+
     // Create a compute construct with the async clause
-    #pragma acc compute async(data)
+    #pragma acc compute async(device_data)
     {
-        // Perform some computation on the data
-        for (int i = 0; i < 10; i++) {
-            data[i] += 1;
+        // Perform some computation on the device data
+        for (int i = 0; i < 100; i++) {
+            device_data[i] += 1;
         }
     }
 
-    // Check that the data has been updated correctly
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != i + 1) {
+    // Wait for the computation to complete
+    #pragma acc wait
+
+    // Check the results
+    for (int i = 0; i < 100; i++) {
+        if (device_data[i] != host_data[i] + 1) {
             err = 1;
             break;
         }

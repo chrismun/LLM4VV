@@ -6,7 +6,7 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    if(acc_async_test(acc_async_sync, acc_async_sync_all)){
+    if (acc_async_test(acc_async_sync, acc_async_sync_all) == 0) {
         err = 1;
     }
 

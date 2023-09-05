@@ -1,53 +1,53 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <openacc.h>
+#include "acc_testsuite.h"
 
-#define NUM_TEST_CALLS 10
-
-int test1() {
+#ifndef T1
+//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+int test1(){
     int err = 0;
     srand(SEED);
 
-    // Allocate a pointer in device memory
-    int *ptr = (int *)acc_malloc(sizeof(int));
+    // Initialize the attachment counter for the pointer
+    int attachment_counter = 0;
 
-    // Set the attachment counter to 0
-    acc_attach_counter(ptr, 0);
+    // Allocate a pointer in device memory
+    int* ptr = (int*)acc_malloc(sizeof(int));
 
     // Attach the pointer to a device address
     acc_attach(ptr, sizeof(int), 0);
 
     // Increment the attachment counter
-    acc_attach_counter(ptr, 1);
+    attachment_counter++;
 
     // Detach the pointer from the device address
     acc_detach(ptr);
 
     // Decrement the attachment counter
-    acc_attach_counter(ptr, -1);
+    attachment_counter--;
 
-    // Check if the attachment counter is 0
-    if (acc_attach_counter(ptr) != 0) {
+    // Check if the attachment counter is zero
+    if (attachment_counter == 0) {
+        // The pointer is detached, so we can free the memory
+        acc_free(ptr);
+    } else {
+        // The pointer is still attached, so we cannot free the memory
         err = 1;
     }
 
-    // Free the pointer in device memory
-    acc_free(ptr);
-
     return err;
 }
+#endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    // Run the test NUM_TEST_CALLS times
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = test1();
-        if (failed != 0) {
-            failcode = failcode + (1 << x);
-        }
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
     return failcode;
 }

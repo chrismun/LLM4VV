@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <acc_testsuite.h>
+#include "acc_testsuite.h"
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -9,14 +6,18 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Declare a variable with predetermined data attributes
-    int x = 0;
+    // Create a loop variable
+    int i = 0;
 
-    // Set the data attributes for the variable
-    acc_set_data_attributes(&x, ACC_DATA_ATTRIBUTE_PRIVATE);
+    // Associate the loop variable with a loop directive
+    #pragma acc loop
+    for (i = 0; i < 10; i++) {
+        // Do something with the loop variable
+        printf("Loop variable: %d\n", i);
+    }
 
-    // Check that the data attributes are set correctly
-    if (acc_get_data_attributes(&x) != ACC_DATA_ATTRIBUTE_PRIVATE) {
+    // Check if the loop variable is private to each thread
+    if (i != 0) {
         err = 1;
     }
 

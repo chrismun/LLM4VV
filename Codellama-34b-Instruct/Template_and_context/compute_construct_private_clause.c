@@ -6,20 +6,26 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int a = 1;
-    int b = 2;
-    int c = 3;
+    int *a = (int *)malloc(10 * sizeof(int));
+    int *b = (int *)malloc(10 * sizeof(int));
 
-    #pragma acc parallel private(a, b, c)
+    #pragma acc parallel private(a, b)
     {
-        a = 4;
-        b = 5;
-        c = 6;
+        for (int i = 0; i < 10; i++) {
+            a[i] = i;
+            b[i] = i;
+        }
     }
 
-    if (a != 4 || b != 5 || c != 6) {
-        err = 1;
+    for (int i = 0; i < 10; i++) {
+        if (a[i] != b[i]) {
+            err = 1;
+            break;
+        }
     }
+
+    free(a);
+    free(b);
 
     return err;
 }

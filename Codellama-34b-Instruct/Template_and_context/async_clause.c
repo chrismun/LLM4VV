@@ -6,44 +6,8 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    #pragma acc parallel async(acc_async_noval)
-    {
-        // Do some work
-    }
-
-    #pragma acc serial async(acc_async_sync)
-    {
-        // Do some work
-    }
-
-    #pragma acc kernels async(acc_async_noval)
-    {
-        // Do some work
-    }
-
-    #pragma acc data async(acc_async_sync)
-    {
-        // Do some work
-    }
-
-    #pragma acc enterdata async(acc_async_noval)
-    {
-        // Do some work
-    }
-
-    #pragma acc exitdata async(acc_async_sync)
-    {
-        // Do some work
-    }
-
-    #pragma acc update async(acc_async_noval)
-    {
-        // Do some work
-    }
-
-    #pragma acc wait async(acc_async_sync)
-    {
-        // Do some work
+    if (acc_async_sync != acc_async_noval){
+        err = 1;
     }
 
     return err;

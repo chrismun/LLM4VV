@@ -1,36 +1,31 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <openacc.h>
+#include "acc_testsuite.h"
 
-#define NUM_TEST_CALLS 10
-
-int test1() {
+#ifndef T1
+//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+int test1(){
     int err = 0;
     srand(SEED);
 
     #pragma acc serial
     {
         // Serial code goes here
-        printf("Hello from the serial region!\n");
     }
 
     return err;
 }
+#endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-
-    #pragma acc parallel
-    {
-        failed = 0;
-        for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-            failed = failed + test1();
-        }
-        if (failed != 0) {
-            failcode = failcode + (1 << 0);
-        }
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
     return failcode;
 }

@@ -1,86 +1,49 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <acc_runtime.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
+int acc_memcpy_to_device(void *data_dev_dest, void *data_host_src, size_t bytes) {
     int err = 0;
-    srand(SEED);
-
-    if(){
-        err = 1;
+    if (bytes == 0) {
+        return err;
     }
-
+    if (data_dev_dest == NULL || data_host_src == NULL) {
+        err = acc_error_invalid_null_pointer;
+        return err;
+    }
+    if (data_dev_dest == data_host_src) {
+        return err;
+    }
+    if (bytes > acc_get_device_memory_size(data_dev_dest)) {
+        err = acc_error_invalid_memory_size;
+        return err;
+    }
+    if (acc_get_device_memory_type(data_dev_dest) != ACC_MEMORY_TYPE_DEVICE) {
+        err = acc_error_invalid_memory_type;
+        return err;
+    }
+    if (acc_get_device_memory_type(data_host_src) != ACC_MEMORY_TYPE_HOST) {
+        err = acc_error_invalid_memory_type;
+        return err;
+    }
+    if (acc_get_device_memory_overlap(data_dev_dest, data_host_src, bytes) != 0) {
+        err = acc_error_invalid_memory_overlap;
+        return err;
+    }
+    memcpy(data_dev_dest, data_host_src, bytes);
     return err;
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+int main() {
+    int err = 0;
+    void *data_dev_dest = acc_malloc(1024);
+    void *data_host_src = malloc(1024);
+    size_t bytes = 1024;
+    err = acc_memcpy_to_device(data_dev_dest, data_host_src, bytes);
+    if (err != 0) {
+        printf("Error: %s\n", acc_error_string(err));
+        return 1;
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
-}
-
-void acc_memcpy_to_device(d_void *data_dev_dest, h_void*data_host_src, size_t bytes){
-    if (bytes == 0) {
-        return;
-    }
-
-    if (data_dev_dest == NULL || data_host_src == NULL) {
-        acc_error("acc_memcpy_to_device: data_dev_dest or data_host_src is NULL");
-        return;
-    }
-
-    if (data_dev_dest == data_host_src) {
-        return;
-    }
-
-    if (data_dev_dest < data_host_src || data_dev_dest > data_host_src + bytes) {
-        acc_error("acc_memcpy_to_device: data_dev_dest is not accessible by the current device");
-        return;
-    }
-
-    if (data_host_src < data_dev_dest || data_host_src > data_dev_dest + bytes) {
-        acc_error("acc_memcpy_to_device: data_host_src is not accessible by the local thread");
-        return;
-    }
-
-    memcpy(data_dev_dest, data_host_src, bytes);
-}
-
-void acc_memcpy_to_device_async(d_void *data_dev_dest, h_void*data_host_src, size_t bytes, int async_arg){
-    if (bytes == 0) {
-        return;
-    }
-
-    if (data_dev_dest == NULL || data_host_src == NULL) {
-        acc_error("acc_memcpy_to_device_async: data_dev_dest or data_host_src is NULL");
-        return;
-    }
-
-    if (data_dev_dest == data_host_src) {
-        return;
-    }
-
-    if (data_dev_dest < data_host_src || data_dev_dest > data_host_src + bytes) {
-        acc_error("acc_memcpy_to_device_async: data_dev_dest is not accessible by the current device");
-        return;
-    }
-
-    if (data_host_src < data_dev_dest || data_host_src > data_dev_dest + bytes) {
-        acc_error("acc_memcpy_to_device_async: data_host_src is not accessible by the local thread");
-        return;
-    }
-
-    memcpy(data_dev_dest, data_host_src, bytes);
+    return 0;
 }

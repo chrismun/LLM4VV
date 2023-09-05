@@ -6,36 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize the device type
-    acc_set_device_type(ACC_DEVICE_TYPE_GPU);
+    // Create a device_type clause with a random device type
+    int device_type = rand() % 2;
+    acc_set_device_type(device_type);
 
-    // Create a device array
-    int *device_array = (int *)acc_malloc(sizeof(int) * 10);
-
-    // Initialize the device array
+    // Create a loop construct with the device_type clause
+    #pragma acc loop device_type(device_type)
     for (int i = 0; i < 10; i++) {
-        device_array[i] = i;
+        // Do some work
     }
 
-    // Create a host array
-    int *host_array = (int *)malloc(sizeof(int) * 10);
-
-    // Copy the device array to the host array
-    acc_memcpy(host_array, device_array, sizeof(int) * 10);
-
-    // Check that the host array is equal to the device array
-    for (int i = 0; i < 10; i++) {
-        if (host_array[i] != device_array[i]) {
-            err = 1;
-            break;
-        }
+    // Check if the device type was set correctly
+    if (acc_get_device_type() != device_type) {
+        err = 1;
     }
-
-    // Free the device array
-    acc_free(device_array);
-
-    // Free the host array
-    free(host_array);
 
     return err;
 }

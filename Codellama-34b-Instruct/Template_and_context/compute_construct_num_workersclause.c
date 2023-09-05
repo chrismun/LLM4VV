@@ -7,15 +7,14 @@ int test1(){
     srand(SEED);
 
     int num_workers = 4; // set the number of workers to 4
-    int num_gangs = 2; // set the number of gangs to 2
 
-    // create a parallel region with 4 workers and 2 gangs
-    #pragma acc parallel num_workers(num_workers) num_gangs(num_gangs)
+    // create a parallel region with the num_workers clause
+    #pragma acc parallel num_workers(num_workers)
     {
-        // do some work
+        // do some work here
     }
 
-    // check if the number of workers is correct
+    // check that the number of workers is correct
     if (acc_get_num_workers() != num_workers) {
         err = 1;
     }

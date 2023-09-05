@@ -6,18 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
+    // Test parallelloop construct
     #pragma acc parallel loop
     for (int i = 0; i < 10; i++) {
-        #pragma acc loop
-        for (int j = 0; j < 10; j++) {
-            #pragma acc kernels loop
-            for (int k = 0; k < 10; k++) {
-                #pragma acc serial loop
-                for (int l = 0; l < 10; l++) {
-                    // Do some work
-                }
-            }
-        }
+        // Do some work
+    }
+
+    // Test serialloop construct
+    #pragma acc serial loop
+    for (int i = 0; i < 10; i++) {
+        // Do some work
+    }
+
+    // Test kernelsloop construct
+    #pragma acc kernels loop
+    for (int i = 0; i < 10; i++) {
+        // Do some work
     }
 
     return err;

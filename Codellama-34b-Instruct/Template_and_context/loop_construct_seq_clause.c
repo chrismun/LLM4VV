@@ -6,9 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
+    int N = 100;
+    int a[N];
+    int b[N];
+
     #pragma acc parallel loop seq
-    for (int i = 0; i < 10; i++) {
-        // Do some work here
+    for (int i = 0; i < N; i++) {
+        a[i] = i;
+        b[i] = i;
+    }
+
+    #pragma acc parallel loop seq
+    for (int i = 0; i < N; i++) {
+        if (a[i] != b[i]) {
+            err = 1;
+            break;
+        }
     }
 
     return err;

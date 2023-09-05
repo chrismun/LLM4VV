@@ -9,23 +9,24 @@ int test1(){
     int *a = (int *)malloc(sizeof(int) * 10);
     int *b = (int *)malloc(sizeof(int) * 10);
 
-    #pragma acc data deviceptr(a, b)
+    // Initialize the arrays with random values
+    for (int i = 0; i < 10; i++) {
+        a[i] = rand();
+        b[i] = rand();
+    }
+
+    // Use the use_device clause to tell the compiler to use the current device address of a and b
+    #pragma acc host_data use_device(a, b)
     {
+        // Perform some operations on the arrays
         for (int i = 0; i < 10; i++) {
-            a[i] = i;
-            b[i] = i;
+            a[i] += b[i];
         }
     }
 
-    #pragma acc parallel loop deviceptr(a, b)
+    // Check that the arrays have been updated correctly
     for (int i = 0; i < 10; i++) {
-        a[i] += b[i];
-    }
-
-    #pragma acc end parallel loop
-
-    for (int i = 0; i < 10; i++) {
-        if (a[i] != i + i) {
+        if (a[i] != b[i] + a[i]) {
             err = 1;
             break;
         }

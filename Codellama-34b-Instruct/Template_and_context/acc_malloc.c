@@ -1,49 +1,43 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
-#define ACC_MALLOC(bytes) acc_malloc(bytes)
+#ifndef T1
+//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+int test1(){
+    int err = 0;
+    srand(SEED);
 
-int main() {
+    if(){
+        err = 1;
+    }
+
+    return err;
+}
+#endif
+
+int main(){
     int failcode = 0;
     int failed;
-
-    // Test 1: acc_malloc with a valid size
+#ifndef T1
     failed = 0;
-    for (int x = 0; x < 10; ++x) {
-        void* ptr = ACC_MALLOC(100);
-        if (ptr == NULL) {
-            failed++;
-        }
-        free(ptr);
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
     }
-    if (failed != 0) {
+    if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-
-    // Test 2: acc_malloc with an invalid size
-    failed = 0;
-    for (int x = 0; x < 10; ++x) {
-        void* ptr = ACC_MALLOC(-1);
-        if (ptr != NULL) {
-            failed++;
-        }
-    }
-    if (failed != 0) {
-        failcode = failcode + (1 << 1);
-    }
-
-    // Test 3: acc_malloc with a size of 0
-    failed = 0;
-    for (int x = 0; x < 10; ++x) {
-        void* ptr = ACC_MALLOC(0);
-        if (ptr != NULL) {
-            failed++;
-        }
-    }
-    if (failed != 0) {
-        failcode = failcode + (1 << 2);
-    }
-
+#endif
     return failcode;
+}
+
+void* acc_malloc(size_t bytes) {
+    void* ptr = NULL;
+    if (bytes > 0) {
+        ptr = malloc(bytes);
+        if (ptr == NULL) {
+            printf("Error: acc_malloc failed to allocate %zu bytes\n", bytes);
+            return NULL;
+        }
+    }
+    return ptr;
 }

@@ -1,7 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <acc_testsuite.h>
+#include "acc_testsuite.h"
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -9,9 +6,22 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    if(){
+    // Create a random array of integers
+    int* data = (int*)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data[i] = rand();
+    }
+
+    // Create a device memory region using acc_create
+    int* d_data = (int*)acc_create(data, sizeof(int) * 10);
+
+    // Check if the data is present in the current device memory
+    if (!acc_is_present(d_data, sizeof(int) * 10)) {
         err = 1;
     }
+
+    // Free the device memory region
+    acc_free(d_data);
 
     return err;
 }
@@ -30,24 +40,4 @@ int main(){
     }
 #endif
     return failcode;
-}
-
-void acc_create(h_void *data_arg, size_t bytes){
-    // Check if the data is already present in the current device memory
-    if (data_arg != NULL && bytes > 0){
-        // Allocate space in the current device memory for the data
-        d_void *device_data = acc_malloc(bytes);
-        if (device_data == NULL){
-            // If the allocation fails, return an error
-            return 1;
-        }
-        // Copy the data to the device memory
-        memcpy(device_data, data_arg, bytes);
-        // Increment the dynamic reference counter
-        acc_increment_reference_count(device_data);
-        // Return a pointer to the device memory
-        return device_data;
-    }
-    // If the data is not present in the current device memory, return an error
-    return 1;
 }

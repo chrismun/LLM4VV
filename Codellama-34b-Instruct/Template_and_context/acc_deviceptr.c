@@ -1,40 +1,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <acc_runtime.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+#define NUM_TEST_CALLS 10
+
 int test1(){
     int err = 0;
     srand(SEED);
 
     // Create a host array
-    int* host_array = (int*)malloc(10 * sizeof(int));
+    int* host_array = (int*)malloc(sizeof(int) * 10);
     for (int i = 0; i < 10; i++) {
         host_array[i] = i;
     }
 
     // Create a device array
-    int* device_array = (int*)acc_malloc(10 * sizeof(int));
+    int* device_array = (int*)acc_malloc(sizeof(int) * 10);
     for (int i = 0; i < 10; i++) {
         device_array[i] = i;
     }
 
     // Copy the host array to the device array
-    acc_memcpy(device_array, host_array, 10 * sizeof(int));
+    acc_memcpy(device_array, host_array, sizeof(int) * 10);
 
     // Get the device pointer for the host array
     int* device_ptr = acc_deviceptr(host_array);
 
-    // Check that the device pointer is not null
+    // Check if the device pointer is valid
     if (device_ptr == NULL) {
+        printf("Device pointer is NULL\n");
         err = 1;
     }
 
-    // Check that the device pointer points to the correct device memory
+    // Check if the device pointer points to the correct location
     if (device_ptr != device_array) {
+        printf("Device pointer does not point to the correct location\n");
         err = 1;
     }
 
@@ -46,12 +47,12 @@ int test1(){
 
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+
+    // Run the test
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
@@ -59,6 +60,6 @@ int main(){
     if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-#endif
+
     return failcode;
 }

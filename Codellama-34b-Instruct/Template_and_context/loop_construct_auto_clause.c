@@ -6,27 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Generate a random number of iterations for the loop
-    int num_iterations = rand() % 100 + 1;
-
-    // Create a loop with the auto clause
-    #pragma acc loop auto
-    for (int i = 0; i < num_iterations; i++) {
-        // Do some work
+    int data[10];
+    for (int i = 0; i < 10; i++) {
+        data[i] = rand() % 100;
     }
 
-    // Check if the loop iterations are data-independent
-    if (acc_is_data_independent(num_iterations)) {
-        // If the loop iterations are data-independent, treat the auto clause as if it is an independent clause
-        #pragma acc loop independent
-        for (int i = 0; i < num_iterations; i++) {
-            // Do some work
-        }
-    } else {
-        // If the loop iterations are not data-independent, treat the auto clause as if it is a seq clause
-        #pragma acc loop seq
-        for (int i = 0; i < num_iterations; i++) {
-            // Do some work
+    #pragma acc loop auto
+    for (int i = 0; i < 10; i++) {
+        data[i] = data[i] + 1;
+    }
+
+    for (int i = 0; i < 10; i++) {
+        if (data[i] != i + 1) {
+            err = 1;
+            break;
         }
     }
 

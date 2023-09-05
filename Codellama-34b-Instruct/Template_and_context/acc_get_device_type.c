@@ -1,22 +1,18 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <acc_runtime.h>
+#include <openacc.h>
 
-int acc_get_device_type(void) {
-    int device_type = acc_get_device_type_var();
+acc_device_t acc_get_device_type(void) {
+    acc_device_t device_type;
+    int device_id;
+
+    device_id = acc_get_device();
+    if (device_id == acc_device_none) {
+        return acc_device_none;
+    }
+
+    device_type = acc_get_device_type_from_id(device_id);
     if (device_type == acc_device_none) {
         return acc_device_none;
     }
-    return device_type;
-}
 
-int main() {
-    int device_type = acc_get_device_type();
-    if (device_type == acc_device_none) {
-        printf("Device type not set\n");
-    } else {
-        printf("Device type: %s\n", acc_device_type_to_string(device_type));
-    }
-    return 0;
+    return device_type;
 }

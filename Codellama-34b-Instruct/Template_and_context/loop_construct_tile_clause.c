@@ -6,39 +6,27 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Initialize the tile sizes
+    // Set up the tile sizes
     int tile_sizes[3] = {16, 32, 64};
 
-    // Initialize the loop bounds
-    int loop_bounds[3] = {100, 200, 300};
-
-    // Initialize the loop indices
-    int loop_indices[3] = {0, 0, 0};
-
-    // Loop over the tile sizes
+    // Set up the loop nest
     for (int i = 0; i < 3; i++) {
-        // Set the tile size for the current loop
-        int tile_size = tile_sizes[i];
-
-        // Set the loop bounds for the current loop
-        int loop_bound = loop_bounds[i];
-
-        // Set the loop index for the current loop
-        int loop_index = loop_indices[i];
-
-        // Loop over the elements in the current loop
-        for (int j = 0; j < loop_bound; j++) {
-            // Check if the current element is within the tile
-            if (j >= tile_size) {
-                // If the current element is within the tile, increment the loop index
-                loop_index++;
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                // Do some work
             }
         }
+    }
 
-        // Check if the loop index is within the tile
-        if (loop_index >= tile_size) {
-            // If the loop index is within the tile, increment the error count
-            err++;
+    // Check that the tile sizes are correct
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                if (tile_sizes[i] != 16 || tile_sizes[j] != 32 || tile_sizes[k] != 64) {
+                    err = 1;
+                    break;
+                }
+            }
         }
     }
 

@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <acc_testsuite.h>
+#include "acc_testsuite.h"
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -10,32 +6,66 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int n = 100;
-    int a[n];
-    int b[n];
-    int c[n];
+    int a[100];
+    int b[100];
+    int c[100];
 
-    for (int i = 0; i < n; i++) {
+    #pragma acc parallel loop reduction(+:a[0:100])
+    for (int i = 0; i < 100; i++) {
         a[i] = i;
+    }
+
+    #pragma acc parallel loop reduction(*:b[0:100])
+    for (int i = 0; i < 100; i++) {
         b[i] = i;
+    }
+
+    #pragma acc parallel loop reduction(max:c[0:100])
+    for (int i = 0; i < 100; i++) {
         c[i] = i;
     }
 
-    #pragma acc parallel loop reduction(+:a,b,c)
-    for (int i = 0; i < n; i++) {
-        a[i] += b[i];
-        b[i] += c[i];
-        c[i] += a[i];
+    #pragma acc parallel loop reduction(min:c[0:100])
+    for (int i = 0; i < 100; i++) {
+        c[i] = i;
     }
 
-    for (int i = 0; i < n; i++) {
-        if (a[i] != b[i] || b[i] != c[i] || c[i] != a[i]) {
-            err = 1;
-            break;
-        }
+    #pragma acc parallel loop reduction(&:a[0:100])
+    for (int i = 0; i < 100; i++) {
+        a[i] = i;
     }
 
-    return err;
+    #pragma acc parallel loop reduction(|:b[0:100])
+    for (int i = 0; i < 100; i++) {
+        b[i] = i;
+    }
+
+    #pragma acc parallel loop reduction(^:c[0:100])
+    for (int i = 0; i < 100; i++) {
+        c[i] = i;
+    }
+
+    #pragma acc parallel loop reduction(&&:a[0:100])
+    for (int i = 0; i < 100; i++) {
+        a[i] = i;
+    }
+
+    #pragma acc parallel loop reduction(||:b[0:100])
+    for (int i = 0; i < 100; i++) {
+        b[i] = i;
+    }
+
+    #pragma acc parallel loop reduction(eqv:c[0:100])
+    for (int i = 0; i < 100; i++) {
+        c[i] = i;
+    }
+
+    #pragma acc parallel loop reduction(neqv:c[0:100])
+    for (int i = 0; i < 100; i++) {
+        c[i] = i;
+    }
+
+    return 0;
 }
 #endif
 

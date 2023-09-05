@@ -9,22 +9,28 @@ int test1(){
     // Create a data array
     int data[10];
     for (int i = 0; i < 10; i++) {
-        data[i] = rand();
+        data[i] = i;
     }
 
-    // Enter data into the device
-    #pragma acc enter data copyin(data)
+    // Create a device array
+    int *dev_data;
+    acc_malloc(&dev_data, sizeof(int) * 10);
 
-    // Verify that the data has been copied to the device
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != data[i]) {
-            err = 1;
-            break;
-        }
+    // Copy data to device
+    acc_memcpy_to_device(dev_data, data, sizeof(int) * 10);
+
+    // Detach device memory
+    acc_detach(dev_data);
+
+    // Check if device memory is still accessible
+    int *dev_data_ptr = (int *)acc_deviceptr(dev_data);
+    if (dev_data_ptr == NULL) {
+        // Device memory is not accessible
+        err = 1;
     }
 
-    // Exit data from the device
-    #pragma acc exit data delete(data)
+    // Free device memory
+    acc_free(dev_data);
 
     return err;
 }

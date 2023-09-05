@@ -7,14 +7,8 @@ int test1(){
     srand(SEED);
 
     int vector_length = 4;
-    int num_vectors = 10;
-    int num_workers = 10;
-
-    // Create a vector of random integers
-    int* data = (int*)malloc(sizeof(int) * num_vectors * vector_length);
-    for (int i = 0; i < num_vectors * vector_length; i++) {
-        data[i] = rand() % 100;
-    }
+    int num_workers = 4;
+    int num_vectors = 16;
 
     // Create a parallel region with the vector_length clause
     #pragma acc parallel num_workers(num_workers) vector_length(vector_length)
@@ -22,20 +16,14 @@ int test1(){
         // Create a loop with the vector clause
         #pragma acc loop vector
         for (int i = 0; i < num_vectors; i++) {
-            // Perform some vector operation on the data
-            data[i * vector_length] = data[i * vector_length] + 1;
+            // Do some work
         }
     }
 
-    // Check that the vector operation was performed correctly
-    for (int i = 0; i < num_vectors; i++) {
-        if (data[i * vector_length] != data[i * vector_length] + 1) {
-            err = 1;
-            break;
-        }
+    // Check that the vector length was set correctly
+    if (acc_get_vector_length() != vector_length) {
+        err = 1;
     }
-
-    free(data);
 
     return err;
 }

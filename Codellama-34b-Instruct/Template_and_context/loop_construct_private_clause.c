@@ -6,108 +6,38 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Scenario 1: Private variables are created for each thread in vector-partitioned mode.
-    int n = 100;
-    int* a = (int*)malloc(n * sizeof(int));
-    int* b = (int*)malloc(n * sizeof(int));
-    int* c = (int*)malloc(n * sizeof(int));
-    int* tmp = (int*)malloc(n * sizeof(int));
-    int* result = (int*)malloc(n * sizeof(int));
+    int n = 10;
+    int a[n][n];
+    int b[n][n];
+    int c[n][n];
+    int tmp[n][n];
 
-    // Initialize arrays
     for (int i = 0; i < n; i++) {
-        a[i] = i;
-        b[i] = i;
-        c[i] = i;
-        tmp[i] = 0;
-        result[i] = 0;
-    }
-
-    // Run loop in vector-partitioned mode
-    #pragma acc parallel loop gang(static:1) vector(length:n) private(tmp)
-    for (int i = 0; i < n; i++) {
-        tmp[i] = b[i] + c[i];
-        #pragma acc loop vector
         for (int j = 0; j < n; j++) {
-            result[i] += tmp[j];
+            a[i][j] = 0;
+            b[i][j] = 0;
+            c[i][j] = 0;
+            tmp[i][j] = 0;
         }
     }
 
-    // Check results
     for (int i = 0; i < n; i++) {
-        if (result[i] != (a[i] + b[i] + c[i])) {
-            err = 1;
-            break;
-        }
-    }
-
-    // Scenario 2: Private variables are created for each worker and shared across all vector lanes of a worker in worker-partitioned vector-single mode.
-    n = 100;
-    a = (int*)malloc(n * sizeof(int));
-    b = (int*)malloc(n * sizeof(int));
-    c = (int*)malloc(n * sizeof(int));
-    tmp = (int*)malloc(n * sizeof(int));
-    result = (int*)malloc(n * sizeof(int));
-
-    // Initialize arrays
-    for (int i = 0; i < n; i++) {
-        a[i] = i;
-        b[i] = i;
-        c[i] = i;
-        tmp[i] = 0;
-        result[i] = 0;
-    }
-
-    // Run loop in worker-partitioned vector-single mode
-    #pragma acc parallel loop gang(static:1) worker(static:1) vector(length:n) private(tmp)
-    for (int i = 0; i < n; i++) {
-        tmp[i] = b[i] + c[i];
-        #pragma acc loop vector
         for (int j = 0; j < n; j++) {
-            result[i] += tmp[j];
+            for (int k = 0; k < n; k++) {
+                tmp[i][j] = b[j][k] + c[j][k];
+                a[i][j] = a[i][j] + tmp[i][j];
+            }
         }
     }
 
-    // Check results
     for (int i = 0; i < n; i++) {
-        if (result[i] != (a[i] + b[i] + c[i])) {
-            err = 1;
-            break;
-        }
-    }
-
-    // Scenario 3: Private variables are created for each gang in all dimensions and shared across all threads associated with all vector lanes of all workers of that gang.
-    n = 100;
-    a = (int*)malloc(n * sizeof(int));
-    b = (int*)malloc(n * sizeof(int));
-    c = (int*)malloc(n * sizeof(int));
-    tmp = (int*)malloc(n * sizeof(int));
-    result = (int*)malloc(n * sizeof(int));
-
-    // Initialize arrays
-    for (int i = 0; i < n; i++) {
-        a[i] = i;
-        b[i] = i;
-        c[i] = i;
-        tmp[i] = 0;
-        result[i] = 0;
-    }
-
-    // Run loop in gang-partitioned mode
-    #pragma acc parallel loop gang(static:1) vector(length:n) private(tmp)
-    for (int i = 0; i < n; i++) {
-        tmp[i] = b[i] + c[i];
-        #pragma acc loop vector
         for (int j = 0; j < n; j++) {
-            result[i] += tmp[j];
-        }
-    }
-
-    // Check results
-    for (int i = 0; i < n; i++) {
-        if (result[i] != (a[i] + b[i] + c[i])) {
-            err = 1;
-            break;
+            for (int k = 0; k < n; k++) {
+                if (a[i][j] != b[j][k] + c[j][k]) {
+                    err = 1;
+                    break;
+                }
+            }
         }
     }
 

@@ -6,28 +6,10 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a random array of integers
-    int* arr = (int*)malloc(sizeof(int) * 100);
-    for (int i = 0; i < 100; i++) {
-        arr[i] = rand() % 100;
+    if (acc_get_default_async() != acc_async_sync){
+        err = 1;
     }
 
-    // Create a compute construct with the default clause
-    #pragma acc parallel loop default(none)
-    for (int i = 0; i < 100; i++) {
-        // Do some computation on the array
-        arr[i] += 1;
-    }
-
-    // Check that the array has been updated correctly
-    for (int i = 0; i < 100; i++) {
-        if (arr[i] != i + 1) {
-            err = 1;
-            break;
-        }
-    }
-
-    free(arr);
     return err;
 }
 #endif

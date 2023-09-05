@@ -6,36 +6,20 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a shared array
-    int *shared_array = (int *)malloc(10 * sizeof(int));
+    int* a = (int*)malloc(sizeof(int));
+    int* b = (int*)malloc(sizeof(int));
+    int* c = (int*)malloc(sizeof(int));
 
-    // Create a non-shared array
-    int *non_shared_array = (int *)malloc(10 * sizeof(int));
-
-    // Initialize the shared array with random values
-    for (int i = 0; i < 10; i++) {
-        shared_array[i] = rand();
+    #pragma acc enter data copyin(a[0:10], b[0:10], c[0:10])
+    {
+        // Do some work with the data
     }
 
-    // Initialize the non-shared array with random values
-    for (int i = 0; i < 10; i++) {
-        non_shared_array[i] = rand();
-    }
+    #pragma acc exit data delete(a[0:10], b[0:10], c[0:10])
 
-    // Copy the non-shared array to the shared array using the copyin clause
-    #pragma acc enter data copyin(non_shared_array[:10])
-
-    // Check that the shared array has the same values as the non-shared array
-    for (int i = 0; i < 10; i++) {
-        if (shared_array[i] != non_shared_array[i]) {
-            err = 1;
-            break;
-        }
-    }
-
-    // Free the arrays
-    free(shared_array);
-    free(non_shared_array);
+    free(a);
+    free(b);
+    free(c);
 
     return err;
 }

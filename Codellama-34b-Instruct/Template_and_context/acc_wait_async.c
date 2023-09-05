@@ -9,23 +9,22 @@ int test1() {
     int err = 0;
     srand(SEED);
 
-    // Create a host pointer
-    int *host_ptr = (int *)malloc(sizeof(int));
-    *host_ptr = 1234;
+    // Create a new async queue
+    acc_async_queue_t queue = acc_async_queue_create(NULL, NULL, NULL);
 
-    // Attach the host pointer to the device
-    acc_attach(host_ptr);
+    // Enqueue a wait operation on the async queue
+    acc_wait_async(queue, 0);
 
-    // Detach the host pointer from the device
-    acc_detach(host_ptr);
-
-    // Check that the host pointer is still valid
-    if (*host_ptr != 1234) {
+    // Check if the wait operation has completed
+    if (acc_async_queue_get_status(queue) == ACC_ASYNC_QUEUE_STATUS_COMPLETE) {
+        printf("Wait operation completed successfully\n");
+    } else {
+        printf("Wait operation did not complete successfully\n");
         err = 1;
     }
 
-    // Free the host pointer
-    free(host_ptr);
+    // Destroy the async queue
+    acc_async_queue_destroy(queue);
 
     return err;
 }
@@ -42,7 +41,7 @@ int main() {
         }
     }
 
-    // Print the result
+    // Print the final result
     if (failcode == 0) {
         printf("All tests passed\n");
     } else {

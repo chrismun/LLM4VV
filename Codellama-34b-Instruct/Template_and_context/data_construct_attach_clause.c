@@ -6,36 +6,29 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    int *data = (int *)malloc(sizeof(int) * 10);
-    int *attach_data = (int *)malloc(sizeof(int) * 10);
+    // Create a pointer to a variable in shared memory
+    int *ptr = (int *)malloc(sizeof(int));
+    *ptr = 1234;
 
-    // Initialize data
-    for (int i = 0; i < 10; i++) {
-        data[i] = i;
+    // Create a pointer to a variable in private memory
+    int *ptr2 = (int *)malloc(sizeof(int));
+    *ptr2 = 5678;
+
+    // Attach the private variable to the shared variable
+    acc_attach(ptr, ptr2);
+
+    // Check that the private variable is now in shared memory
+    if (*ptr != *ptr2) {
+        err = 1;
     }
 
-    // Attach data to the device
-    #pragma acc attach(data, attach_data)
+    // Detach the private variable from the shared variable
+    acc_detach(ptr, ptr2);
 
-    // Perform some operations on the data
-    #pragma acc parallel loop
-    for (int i = 0; i < 10; i++) {
-        data[i] += attach_data[i];
+    // Check that the private variable is no longer in shared memory
+    if (*ptr == *ptr2) {
+        err = 1;
     }
-
-    // Detach data from the device
-    #pragma acc detach(data, attach_data)
-
-    // Check the results
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != i + attach_data[i]) {
-            err = 1;
-            break;
-        }
-    }
-
-    free(data);
-    free(attach_data);
 
     return err;
 }

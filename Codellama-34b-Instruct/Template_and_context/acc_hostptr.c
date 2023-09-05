@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <acc_testsuite.h>
 
 #ifndef T1
 //T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
@@ -20,7 +19,7 @@ int test1(){
         err = 1;
     }
 
-    // Free the device memory
+    // Free the device pointer
     acc_free(data_dev);
 
     return err;

@@ -7,24 +7,21 @@ int test1(){
     srand(SEED);
 
     // Create a host array
-    int *host_data = (int *)malloc(sizeof(int) * 10);
-    for (int i = 0; i < 10; i++) {
-        host_data[i] = i;
-    }
+    int *host_array = (int*)malloc(sizeof(int) * 10);
 
-    // Map the host array to the device
-    int *device_data = (int *)acc_map_data(host_data, sizeof(int) * 10);
+    // Map the host array to a device array
+    int *device_array = (int*)acc_map_data(host_array, sizeof(int) * 10);
 
-    // Unmap the device data
-    acc_unmap_data(device_data);
+    // Unmap the device array
+    acc_unmap_data(device_array);
 
-    // Check that the device data is no longer mapped
-    if (acc_is_present(device_data, sizeof(int) * 10) != 0) {
+    // Check that the device array is no longer mapped
+    if (acc_is_present(device_array, sizeof(int) * 10) == 0) {
         err = 1;
     }
 
     // Free the host array
-    free(host_data);
+    free(host_array);
 
     return err;
 }

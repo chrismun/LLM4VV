@@ -1,19 +1,30 @@
-#include <stdbool.h>
-#include <stddef.h>
+#include "acc_testsuite.h"
 
-#define ACC_DEVICE_HOST 0
-#define ACC_DEVICE_NOT_HOST 1
-#define ACC_DEVICE_DEFAULT 2
+int acc_on_device(acc_device_t dev_type) {
+    int result = 0;
 
-bool acc_on_device(int dev_type) {
-    switch (dev_type) {
-        case ACC_DEVICE_HOST:
-            return true;
-        case ACC_DEVICE_NOT_HOST:
-            return false;
-        case ACC_DEVICE_DEFAULT:
-            return true;
-        default:
-            return false;
+    if (dev_type == acc_device_host) {
+        result = 1;
+    } else if (dev_type == acc_device_not_host) {
+        result = 0;
+    } else {
+        result = 1;
     }
+
+    return result;
+}
+
+int main() {
+    int failcode = 0;
+    int failed;
+
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+        failed = failed + acc_on_device(acc_device_host);
+    }
+    if (failed != 0) {
+        failcode = failcode + (1 << 0);
+    }
+
+    return failcode;
 }

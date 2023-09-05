@@ -1,45 +1,52 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <acc_runtime.h>
 
-int acc_memcpy_from_device(void *data_host_dest, void *data_dev_src, size_t bytes) {
+#define NUM_TEST_CALLS 10
+
+int test1() {
     int err = 0;
+    srand(SEED);
 
-    if (bytes == 0) {
-        return 0;
+    // Allocate memory on the device
+    void *data_dev = acc_malloc(1024);
+    if (data_dev == NULL) {
+        err = 1;
     }
 
-    if (data_host_dest == NULL || data_dev_src == NULL) {
-        err = acc_error_invalid_null_pointer;
-        goto error;
+    // Copy data from the device to the host
+    void *data_host = acc_malloc(1024);
+    if (data_host == NULL) {
+        err = 1;
     }
 
-    if (acc_deviceptr_is_shared(data_dev_src) && acc_hostptr_is_shared(data_host_dest)) {
-        if (acc_deviceptr_is_same(data_dev_src, data_host_dest)) {
-            return 0;
+    // Copy data from the device to the host
+    acc_memcpy_from_device(data_host, data_dev, 1024);
+
+    // Check that the data was copied correctly
+    if (memcmp(data_host, data_dev, 1024) != 0) {
+        err = 1;
+    }
+
+    // Free memory on the device
+    acc_free(data_dev);
+    acc_free(data_host);
+
+    return err;
+}
+
+int main() {
+    int failcode = 0;
+    int failed;
+
+    // Run the test multiple times
+    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+        failed = test1();
+        if (failed != 0) {
+            failcode = failcode + (1 << x);
         }
-        if (acc_deviceptr_overlap(data_dev_src, data_host_dest, bytes)) {
-            err = acc_error_invalid_async;
-            goto error;
-        }
     }
 
-    if (!acc_deviceptr_is_accessible(data_dev_src)) {
-        err = acc_error_invalid_async;
-        goto error;
-    }
-
-    if (!acc_hostptr_is_accessible(data_host_dest)) {
-        err = acc_error_invalid_async;
-        goto error;
-    }
-
-    memcpy(data_host_dest, data_dev_src, bytes);
-
-    return 0;
-
-error:
-    acc_error_handler(err);
-    return 1;
+    return failcode;
 }

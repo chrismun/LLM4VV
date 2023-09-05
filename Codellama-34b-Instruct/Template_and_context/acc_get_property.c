@@ -1,59 +1,57 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <openacc.h>
 
-size_t acc_get_property(int dev_num, acc_device_t dev_type, acc_device_property_t property) {
-    size_t result = 0;
-    switch (property) {
-        case acc_property_memory:
-            result = acc_get_memory_size(dev_num, dev_type);
-            break;
-        case acc_property_free_memory:
-            result = acc_get_free_memory_size(dev_num, dev_type);
-            break;
-        case acc_property_shared_memory_support:
-            result = acc_get_shared_memory_support(dev_num, dev_type);
-            break;
-        case acc_property_name:
-            result = acc_get_device_name(dev_num, dev_type);
-            break;
-        case acc_property_vendor:
-            result = acc_get_device_vendor(dev_num, dev_type);
-            break;
-        case acc_property_driver:
-            result = acc_get_device_driver(dev_num, dev_type);
-            break;
-        default:
-            result = 0;
-            break;
+#define NUM_TEST_CALLS 10
+#define SEED 12345
+
+int test1() {
+    int err = 0;
+    srand(SEED);
+
+    // Get the device number and device type
+    int dev_num = rand() % 10;
+    acc_device_t dev_type = acc_get_device_type(dev_num);
+
+    // Get the memory size and free memory size
+    size_t mem_size = acc_get_property(dev_num, dev_type, acc_property_memory);
+    size_t free_mem_size = acc_get_property(dev_num, dev_type, acc_property_free_memory);
+
+    // Get the device name, vendor, and driver version
+    const char* name = acc_get_property_string(dev_num, dev_type, acc_property_name);
+    const char* vendor = acc_get_property_string(dev_num, dev_type, acc_property_vendor);
+    const char* driver = acc_get_property_string(dev_num, dev_type, acc_property_driver);
+
+    // Print the results
+    printf("Device %d (%s):\n", dev_num, name);
+    printf("  Memory size: %zu\n", mem_size);
+    printf("  Free memory size: %zu\n", free_mem_size);
+    printf("  Device name: %s\n", name);
+    printf("  Device vendor: %s\n", vendor);
+    printf("  Device driver version: %s\n", driver);
+
+    // Check if the device supports shared memory
+    if (acc_get_property(dev_num, dev_type, acc_property_shared_memory_support) != 0) {
+        printf("  Shared memory is supported\n");
+    } else {
+        printf("  Shared memory is not supported\n");
     }
-    return result;
+
+    return err;
 }
 
-const char* acc_get_property_string(int dev_num, acc_device_t dev_type, acc_device_property_t property) {
-    const char* result = NULL;
-    switch (property) {
-        case acc_property_memory:
-            result = acc_get_memory_size_string(dev_num, dev_type);
-            break;
-        case acc_property_free_memory:
-            result = acc_get_free_memory_size_string(dev_num, dev_type);
-            break;
-        case acc_property_shared_memory_support:
-            result = acc_get_shared_memory_support_string(dev_num, dev_type);
-            break;
-        case acc_property_name:
-            result = acc_get_device_name_string(dev_num, dev_type);
-            break;
-        case acc_property_vendor:
-            result = acc_get_device_vendor_string(dev_num, dev_type);
-            break;
-        case acc_property_driver:
-            result = acc_get_device_driver_string(dev_num, dev_type);
-            break;
-        default:
-            result = NULL;
-            break;
+int main() {
+    int failcode = 0;
+    int failed;
+
+    // Run the test 10 times
+    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+        failed = test1();
+        if (failed != 0) {
+            failcode = failcode + (1 << x);
+        }
     }
-    return result;
+
+    return failcode;
 }

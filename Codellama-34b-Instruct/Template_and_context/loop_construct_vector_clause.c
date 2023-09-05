@@ -6,15 +6,44 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    // Create a parallel region with a vector clause
-    #pragma acc parallel loop vector(16)
-    for (int i = 0; i < 100; i++) {
-        // Do some work
+    // Set up the loop
+    int i, j;
+    int N = 100;
+    int M = 10;
+    int A[N][M];
+    int B[N][M];
+    int C[N][M];
+
+    // Initialize the arrays
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < M; j++) {
+            A[i][j] = i + j;
+            B[i][j] = i - j;
+            C[i][j] = 0;
+        }
     }
 
-    // Check that the loop was executed in vector mode
-    if (acc_get_vector_mode() != ACC_VECTOR_MODE_ENABLED) {
-        err = 1;
+    // Set up the vector clause
+    int vector_length = 4;
+    int vector_stride = 1;
+    int vector_offset = 0;
+
+    // Execute the loop with vector processing
+    #pragma acc parallel loop vector(vector_length, vector_stride, vector_offset)
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < M; j++) {
+            C[i][j] = A[i][j] + B[i][j];
+        }
+    }
+
+    // Check the results
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < M; j++) {
+            if (C[i][j] != A[i][j] + B[i][j]) {
+                err = 1;
+                break;
+            }
+        }
     }
 
     return err;
