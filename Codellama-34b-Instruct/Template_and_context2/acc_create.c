@@ -1,4 +1,4 @@
-#include "acc_testsuite.h"
+submit#include "acc_testsuite.h"
 
 #ifndef T1
 //T1:acc create,V:2.7-3.3
