@@ -64,7 +64,7 @@ def compile_and_run_tests(test_dir, build_dir):
 
     return results
 
-test_dir = "../vvllm_git/gpt-4/template_context_full/"
+test_dir = "/lustre/schandra_crpl/users/2802/llmvv/vvllm_git/Phind-CodeLlama-34B-v2/context_template"
 
 build_dir = "build"
 
