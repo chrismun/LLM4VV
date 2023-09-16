@@ -10,8 +10,10 @@ int test1(){
     float* b = (float*)malloc(length * sizeof(float));
 
     for(int i=0; i<length; i++){
-        a[i] = (float)rand()/(float)(RAND_MAX/2) - 1.f;  // Initialize with random values
-        b[i] = 0.f;  // Initialize with zeros
+        a[i] = (float)rand()/(float)(RAND_MAX/2);  // Initialize with random values
+        //a[i] = (float)rand()/(float)(RAND_MAX/2) - 1.f;  // Initialize with random values
+        b[i] = 0;  // Initialize with zeros
+        //b[i] = 0.f;  // Initialize with zeros
     }
     
     #pragma acc data create(a[0:length])
