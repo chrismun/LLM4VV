@@ -6,22 +6,54 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        INTEGER:: dev
+        INTEGER :: i, j, k
+        REAL(8) :: a(10), b(10), c(10), d(10)
+        REAL(8) :: sum_a, sum_b, sum_c, sum_d
 
-        !$acc serial reduction(+:errors)
-        T1: dev = 1 
-        IF (acc_device_num: dev = 2)
-          dev = 2
-        ELSE IF (acc_device_num: dev = 1)
-          dev = 1
-        ELSE 
-          dev = 0
+        DO i = 1, 10
+          a(i) = i
+          b(i) = i * 2
+          c(i) = i * 3
+          d(i) = i * 4
+        END DO
+
+        !$acc serial
+        !$acc loop reduction(+:sum_a)
+        DO i = 1, 10
+          sum_a = sum_a + a(i)
+        END DO
+        !$acc end serial
+
+        !$acc serial
+        !$acc loop reduction(*:sum_b)
+        DO i = 1, 10
+          sum_b = sum_b * b(i)
+        END DO
+        !$acc end serial
+
+        !$acc serial
+        !$acc loop reduction(max:sum_c)
+        DO i = 1, 10
+          sum_c = MAX(sum_c, c(i))
+        END DO
+        !$acc end serial
+
+        !$acc serial
+        !$acc loop reduction(min:sum_d)
+        DO i = 1, 10
+          sum_d = MIN(sum_d, d(i))
+        END DO
+        !$acc end serial
+
+        IF (sum_a .NE. 55 .OR. sum_b .NE. 38416 .OR. sum_c .NE. 30 .OR. sum_d .NE. 1) THEN
+          errors = errors + 1
         END IF
+
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
           test1 = .TRUE.
-        END IF
+        END If
       END
 #endif
 

@@ -1,61 +1,66 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 #include "acc_testsuite.h"
 
-#ifndef T1
-// T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1() {
+#ifndef T2
+
+int test2(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
 
-    // Declare variables and allocate memory on host
-    int* a = (int*)malloc(N * sizeof(int));
-    int* b = (int*)malloc(N * sizeof(int));
-
-    // Initialize data on host
-    for (int i = 0; i < N; i++) {
-        a[i] = rand() % 10;
-        b[i] = 0;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+        c[x] = 0;
     }
 
-    // Transfer data from host to device
-    #pragma acc data copyin(a[0:N]) create(b[0:N])
+    #pragma acc enter data copyin(a[0:n])
+    #pragma acc enter data create(b[0:n])
+    #pragma acc enter data create(c[0:n])
+
+    #pragma acc data deviceptr(a, b, c)
     {
-        // Perform computation on device
-        #pragma acc parallel loop present(a[0:N], b[0:N])
-        for (int i = 0; i < N; i++) {
-            // Store result on device
-            b[i] = a[i] * a[i];
+        #pragma acc kernels
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x] * 2;
+            }
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                c[x] = b[x] * 2;
+            }
         }
     }
 
-    // Transfer data from device to host
-    #pragma acc data copyout(b[0:N]) delete(a[0:N])
+    #pragma acc exit data copyout(b[0:n])
+    #pragma acc exit data copyout(c[0:n])
 
-    // Verify the results
-    for (int i = 0; i < N; i++) {
-        if (b[i] != a[i] * a[i]) {
-            err = 1;
-            break;
+    for (int x = 0; x < n; ++x){
+        if (fabs(c[x] - (a[x] * 4)) > PRECISION){
+            err += 1;
         }
     }
-
-    // Free memory on host
-    free(a);
-    free(b);
 
     return err;
 }
+
 #endif
 
-int main() {
+int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+#ifndef T2
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test1();
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
     }
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
     }
 #endif
     return failcode;

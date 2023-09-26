@@ -5,62 +5,38 @@
         IMPLICIT NONE
         INCLUDE "acc_testsuite.Fh"
         
-        INTEGER :: errors, i, j, k, tmp :: 0
+        INTEGER :: errors = 0
+        INTEGER, DIMENSION(100) :: a, b, c
+        INTEGER :: n = 100
+        REAL :: tmp
+        INTEGER :: i, j, k
 
-        REAL(8), DIMENSION(N * N * N) :: a, a_copy, b, c, d, a_host
-        IF (acc_get_device_type() == acc_device_none) THEN
-          RETURN
-        END IF
-
-        SEEDDIM(1) = 1
-	SEEDDIM(2) = 1
-	SEED(3) = SEED
-        CALL RANDOM_SEED(PUT=SEED)
-
-        CALL RANDOM_NUMBER(a)
-        a_copy = a
-        CALL RANDOM_NUMBER(b)
-        CALL RANDOM_NUMBER(c)
-
-        DO i = 1, N
-	  DO j = 1, N
-            a(i, j, :) = 0
-            d(i, j, :) = 0
-	  END DO
+        DO i = 1, n
+          a(i) = 0
+          b(i) = i
+          c(i) = i * 2
         END DO
 
-        !$acc data copyin(a(1, 1, 1:N*N), b(1, 1, 1:N*N), c(1, 1, 1:N*N), d(1, 1, 1:N*N)) copyout(a(1, 1, 1:N*N))
-          !$acc region
-            !$acc parallel
-              !$acc loop gang
-              DO k = 1, N
-                !$acc loop worker private(tmp)
-                DO j = 1, N
-                  tmp = b(j, k) + c(j, k)
-                  !$acc loop vector
-                  DO i = 1, N
-                    a(i, j, k) = a(i, j, k) + tmp / 10
-                  END DO
-                END DO
-              END DO
-            !$acc end parallel
-          !$acc end region
-        !$acc end data
-
-        DO i = 1, N
-	  DO j = 1, N
-            DO k = 1, N
-              d(i, j, k) = a(i, j, k) - a_copy(i, j, k)
+        !$acc parallel
+        !$acc loop gang
+        DO k = 1, n
+          !$acc loop worker private(tmp)
+          DO j = 1, n
+            !a single vector lane in each gang and worker assigns to tmp
+            tmp = b(j) + c(j)
+            !$acc loop vector
+            DO i = 1, n
+              !all vector lanes use the result of the above update to tmp
+              a(i) = a(i) + tmp
             END DO
-	  END DO
-        END DO
-
-        DO i = 1, N
-          DO j = 1, N
-            IF (abs(SUM(d(i, j, 1:N))) .gt. PRECISION) THEN
-              errors = errors + 1
-            END IF
           END DO
+        END DO
+        !$acc end parallel
+
+        DO i = 1, n
+          IF (a(i) .ne. (n * (n + 1) * (2 * n + 1) / 6)) THEN
+            errors = errors + 1
+          END IF
         END DO
 
         IF (errors .eq. 0) THEN

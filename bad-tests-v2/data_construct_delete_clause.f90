@@ -1,45 +1,72 @@
-PROGRAM main
+fortran
+#ifndef T1
+!T1:data construct delete clause,V:2.7-2.3
+      LOGICAL FUNCTION test1()
+        USE OPENACC
+        IMPLICIT NONE
+        INCLUDE "acc_testsuite.Fh"
+        
+        INTEGER :: errors = 0
+        INTEGER :: var1, var2
+        INTEGER :: ptr1, ptr2
+        INTEGER :: dynamic_ref_counter1, dynamic_ref_counter2
+        INTEGER :: structured_ref_counter1, structured_ref_counter2
+        
+        ! Initialize variables
+        var1 = 1
+        var2 = 2
+        ptr1 = 1
+        ptr2 = 2
+        dynamic_ref_counter1 = 0
+        dynamic_ref_counter2 = 0
+        structured_ref_counter1 = 0
+        structured_ref_counter2 = 0
+        
+        ! Test data construct delete clause
+        !$acc data copy(var1, var2) delete(ptr1, ptr2)
+        !$acc end data
+        
+        ! Check if delete clause worked correctly
+        IF (dynamic_ref_counter1 .eq. 0 .and. dynamic_ref_counter2 .eq. 0) THEN
+          ! Delete action should have been performed
+          errors = errors + 1
+        END IF
+        
+        ! Check if detach action was performed correctly
+        IF (ptr1 .eq. 1 .and. ptr2 .eq. 2) THEN
+          ! Detach action should have been performed
+          errors = errors + 1
+        END IF
+        
+        ! Check if present decrement action was performed correctly
+        IF (structured_ref_counter1 .eq. 0 .and. structured_ref_counter2 .eq. 0) THEN
+          ! Present decrement action should have been performed
+          errors = errors + 1
+        END IF
+        
+        ! Return errors
+        test1 = errors .eq. 0
+      END
+#endif
+      
+      PROGRAM main
         IMPLICIT NONE
         INTEGER :: failcode, testrun
         LOGICAL :: failed
         INCLUDE "acc_testsuite.Fh"
-		INTEGER, PARAMETER :: N = 10
-        REAL(8), DIMENSION(N):: a, b, c, d
-        failed = .FALSE.
-        failcode = 0
-		CALL RANDOM_NUMBER(a)
-		CALL RANDOM_NUMBER(b)
-		CALL RANDOM_NUMBER(d)
-		c = 0
 #ifndef T1
         LOGICAL :: test1
-        testrun = 1
-        failed = failed .or. test1
-		DO WHILE (acc_get_device_num() == testrun-:
-    	SELECTED_INT_KIND(3)
-    	INTEGER :: device_num
-        CALL SYSTEM("acc set device_num= " // ICHAR(device_num) // " >nul 2>nul")
-
-	
-		    device_num = 0
-    	$OMP PARALLEL PRIVATE(device_num)
-	    {
-    	device_num = acc_get_device_num()
-    	$OMP CRITICAL
-    	{
-	      IF (IS_IOSTAT_ZERO)
-    	  THEN
-        	    failed = .FALSE.
-         	  ELSE
-            	    failed = .TRUE.
-          	  END IF
-   	        }
-   	      }
-		
-	  !$OMP END PARALLEL
-	       
-          
-        END DO
 #endif
-		
+        failed = .FALSE.
+        failcode = 0
+#ifndef T1
+        DO testrun = 1, NUM_TEST_CALLS
+          failed = failed .or. test1()
+        END DO
+        IF (failed) THEN
+          failcode = failcode + 2 ** 0
+          failed = .FALSE.
+        END IF
+#endif
+        CALL EXIT (failcode)
       END PROGRAM

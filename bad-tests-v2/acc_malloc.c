@@ -1,60 +1,50 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <openacc.h>
 
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.0001
+#define N 1024
 
-int test_acc_malloc(void) {
-    int err = 0;
-    int *a = (int *)acc_malloc(sizeof(int) * 10);
-    int *b = (int *)acc_malloc(sizeof(int) * 10);
+int main(){
+    int i;
+    double *a, *b;
 
-    for (int i = 0; i < 10; i++) {
-        a[i] = i;
-        b[i] = 0;
+    /* Allocate memory on the host */
+    a = (double *) malloc(N * sizeof(double));
+    b = (double *) malloc(N * sizeof(double));
+
+    /* Initialize the arrays */
+    for(i = 0; i < N; i++){
+        a[i] = i * 1.0;
+        b[i] = 0.0;
     }
 
-    #pragma acc data copyin(a[0:10])
+    /* Allocate memory on the device */
+    #pragma acc enter data copyin(a[0:N])
+    #pragma acc enter data create(b[0:N])
+
+    /* Copy data to the device */
+    #pragma acc update device(a[0:N])
+
+    /* Launch kernel to perform vector addition */
+    #pragma acc kernels present(a[0:N], b[0:N])
     {
-        #pragma acc kernels copyout(b[0:10])
-        {
-            #pragma acc loop
-            for (int i = 0; i < 10; i++) {
-                b[i] = a[i];
-            }
+        #pragma acc loop
+        for(i = 0; i < N; i++){
+            b[i] = a[i] * 2.0;
         }
     }
 
-    for (int i = 0; i < 10; i++) {
-        if (b[i] != a[i]) {
-            err++;
+    /* Copy result back to the host */
+    #pragma acc update host(b[0:N])
+
+    /* Verify the result */
+    for(i = 0; i < N; i++){
+        if(fabs(b[i] - (i * 1.0 * 2.0)) > 1e-6){
+            printf("Test failed at index %d\n", i);
+            return 1;
         }
     }
 
-    acc_free(a);
-    acc_free(b);
-
-    return err;
-}
-
-int main() {
-    int failcode = 0;
-    int failed;
-
-    for (int i = 0; i < NUM_TEST_CALLS; i++) {
-        failed = test_acc_malloc();
-        if (failed != 0) {
-            failcode = failcode + (1 << i);
-        }
-    }
-
-    if (failcode != 0) {
-        printf("Test failed with failcode %d\n", failcode);
-    } else {
-        printf("Test passed\n");
-    }
-
-    return failcode;
+    printf("Test passed\n");
+    return 0;
 }

@@ -5,9 +5,28 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    if(){
+    // Create a new array with the create clause
+    int* arr = (int*)acc_create(sizeof(int) * 10, NULL);
+
+    // Check that the array was created successfully
+    if (arr == NULL) {
         err = 1;
     }
+
+    // Zero the array
+    for (int i = 0; i < 10; i++) {
+        arr[i] = 0;
+    }
+
+    // Check that the array is zeroed
+    for (int i = 0; i < 10; i++) {
+        if (arr[i] != 0) {
+            err = 1;
+        }
+    }
+
+    // Detach the array
+    acc_detach(arr);
 
     return err;
 }

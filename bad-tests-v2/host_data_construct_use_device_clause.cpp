@@ -1,33 +1,32 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-//T1:host_data construct use_device clause,V:2.7-3.3
+/*T1:host_data construct use_device clause,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
+    int* host_ptr = (int*) malloc(10 * sizeof(int));
+    int* device_ptr;
 
-    data *a = (data *)malloc(n * sizeof(data));
-	private *b = (private *)malloc(n * sizeof(private));
+    // Initialize host array
+    for(int i=0; i<10; i++) {
+        host_ptr[i] = rand() % 100;
+    }
 
-    //host data construct with use_device clause
-    #pragma acc data create(a[0:n]) copy(b[0:n])
+    // Allocate space on the device and copy data from the host
+    #pragma acc enter data create(device_ptr[0:10])
+    #pragma acc update device(device_ptr[0:10])
+
+    // Use device_ptr inside host_data
+    #pragma acc host_data use_device(device_ptr)
     {
-        #pragma acc host_data use_device(a[0:n])
-        {
-            #pragma acc parallel loop
-            for (int x = 0; x < n; ++x){
-                a[x].a = 1.0;
-                a[x].b = a[x].a + 1.0;
-                b[x].c = a[x].a / 2;
-            }
-        }
-        stable(a, b, is_host);
+      if(device_ptr == NULL){
+        err = 1;
+      }
     }
 
-    for (int x = 0; x < n; ++x){
-        a[x].a = 1.0;
-        a[x].b = a[x].a + 1.0;
-    }
-    stable(a, b, n, is_device);
+    // Deallocate space on the device
+    #pragma acc exit data delete(device_ptr[0:10])
 
     return err;
 }

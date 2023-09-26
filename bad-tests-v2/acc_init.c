@@ -1,18 +1,18 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-/*T1:acc init,V:2.0-2.7*/
+//T1:acc init,V:3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    acc_device_t dev_type = rand() % acc_get_num_devices(acc_device_default);
-    acc_init(dev_type);
+    // Initialize the OpenACC runtime for a device of type acc_device_default
+    acc_init(acc_device_default);
 
-    if (acc_get_device_type() != dev_type){
+    // Check if it's in the device region to verify it was initialized correctly
+    if(acc_get_device_type() != acc_device_default) {
         err = 1;
     }
-
-    acc_shutdown(dev_type);
 
     return err;
 }
@@ -21,6 +21,7 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
+    
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
@@ -30,5 +31,6 @@ int main(){
         failcode = failcode + (1 << 0);
     }
 #endif
+    
     return failcode;
 }

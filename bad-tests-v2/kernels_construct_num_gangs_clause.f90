@@ -1,3 +1,4 @@
+fortran
 #ifndef T1
 !T1:kernels construct num_gangs clause,V:2.7-2.3
       LOGICAL FUNCTION test1()
@@ -6,51 +7,27 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8),DIMENSION(LOOPCOUNT, 10):: a
-        REAL(8),DIMENSION(LOOPCOUNT):: b
-        INTEGER:: i, x
-
-
-        SEEDDIM(1) = 1
-        #pragma acc data copy(a(1:LOOPCOUNT, 1:10)) copyin(SEEDDIM) copy(b(1:LOOPCOUNT))
-        SEEDDIM(1) = 1
-	#pragme acc kernels loop gang num_gangs(1)
-	DO x = 1, 10
-          #pragma acc loop vector
-          DO i =  1, LOOPCOUNT
-            a(i, x) = getRand(SEEDDIM, i)
-	  END DO
-	DO
-         #pragma acc parallel
-          DO i = 1, LOOPCOUNT
-            b(i) = 1
-          END DO
-	#END DO
-          
-        END DO
-
-        DO x = 1, 10
-          SEEDDIM(1) = 1
-          #pragma acc data copy(a(1:LOOPCOUNT, x)) copyin(SEEDDIM)
-          #pragma acc parallel loop num_gangs(16) vector_length(32)
-          DO i = 1, LOOPCOUNT
-            a(i, x) = a(i, x) * a(i, x)
-          END DO
-          errors = 0
-          SEEDDIM(1) = 1
-          #pragma acc data copy(b(1:LOOPCOUNT)) copyin(SEEDDIM)
-          #pragma acc parallel loop num_gangs(16) vector_length(32)
-          DO i = 1, LOOPCOUNT
-            b(i) = a(i, x) + b(i)
-          END DO
-          #pragma acc exit data copyout(b(1:LOOPCOUNT)) delete(a(1:LOOPCOUNT, 1:10)))
-          DO i = 1, LOOPCOUNT
-            IF (fabs(b(i) - (1 + (a(i, x)))))  is zero THEN
-              errors = errors + 1
-            END IF
+        INTEGER :: num_gangs
+        INTEGER :: num_workers
+        INTEGER :: num_vectors
+        INTEGER :: i
+        
+        !$acc kernels num_gangs(2, 3, 4)
+        !$acc parallel num_gangs(2, 3, 4)
+        !$acc loop gang
+        DO i = 1, 10
+          !$acc loop worker
+          DO j = 1, 10
+            !$acc loop vector
+            DO k = 1, 10
+              !$acc loop
+              CALL acc_attach(i, j, k)
+            END DO
           END DO
         END DO
-
+        !$acc end parallel
+        !$acc end kernels
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
@@ -58,7 +35,7 @@
         END IF
       END
 #endif
-
+      
       PROGRAM main
         IMPLICIT NONE
         INTEGER :: failcode, testrun

@@ -6,71 +6,43 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(3),DIMENSION(10):: a, b, c
-        INTEGER, DIMENSION(1) :: devtest
-        REAL(8)
-        INTEGER :: device_num
+        INTEGER :: dev_num_dest, dev_num_src
+        INTEGER :: async_arg_src
+        TYPE(acc_device_t) :: device_dest, device_src
+        TYPE(acc_async_t) :: async_arg_src
+        TYPE(acc_memcpy_d2d_t) :: memcpy_d2d
         
-        devtest(1) = 1
-        acc_create(devtest, 1)
-
-        !host variable initialization
-        SEEDDIM(1) = 1
-        #ifndef LOOPCOUNT
-        LOOPCOUNT = 10
-        #endif
-        #ifdef SEED
-        SEEDDIM(1) = SEED
-        #endif
-        CALL RANDOM_SEED(PUT=SEEDDIM)
-
-        CALL RANDOM_NUMBER(a)
-        CALL RANDOM_NUMBER(b)
-        c = 0
+        ! Initialize the devices and async arguments
+        CALL acc_init(device_dest)
+        CALL acc_init(device_src)
+        CALL acc_async_init(async_arg_src, device_src)
         
-        !$acc enter data copyin(c(1:10)), create(a(1:10), b(1:10))
+        ! Set the device numbers and async argument
+        dev_num_dest = device_dest%device_num
+        dev_num_src = device_src%device_num
+        async_arg_src = async_arg_src%async_arg
         
-        !$acc parallel present(c(1:10), a(1:10), b(1:10))
-          !$acc loop
-          DO testrun = 1, NUM_TEST_CALLS
-            !$acc memcpy(d2d, c(1:10), 10 * sizeof(c(1))), async(1)
-            c(testrun) = a(testrun) + b(testrun)
-            !$acc update device(c(1:10))
-          END DO
-          test1 = testrun
-          IF (testrun.mod.2. eq. 0) THEN
-            DO WHILE (acc_async_test_all() .eqv. .FALSE.)
-            END DO
-          END IF
-        !$acc end parallel
-        DO testrun = 1, NUM_TEST_CALLS
-          IF (abs(c(testrun) - (a(testrun) + b(testrun))).gt. PRECISION) THEN
-            errors = errors + 1
-          END IF
-        END DO
-
-        test1 = (errors .eq. 0)
+        ! Create the memcpy_d2d object
+        CALL acc_memcpy_d2d_init(memcpy_d2d, dev_num_dest, dev_num_src, async_arg_src)
+        
+        ! Perform the memcpy_d2d operation
+        CALL acc_memcpy_d2d(memcpy_d2d, data_arg_dest, data_arg_src, bytes)
+        
+        ! Check for errors
+        IF (acc_get_error_code() .ne. acc_error_none) THEN
+          errors = errors + 1
+        END IF
+        
+        ! Clean up
+        CALL acc_memcpy_d2d_destroy(memcpy_d2d)
+        CALL acc_async_destroy(async_arg_src)
+        CALL acc_destroy(device_src)
+        CALL acc_destroy(device_dest)
+        
+        IF (errors .eq. 0) THEN
+          test1 = .FALSE.
+        ELSE
+          test1 = .TRUE.
+        END IF
       END
 #endif
-
-      PROGRAM main
-        IMPLICIT NONE
-        INTEGER :: failcode, testrun
-        LOGICAL :: failed
-        INCLUDE "acc_testsuite.Fh"
-#ifndef T1
-        LOGICAL :: test1
-#endif
-        failed = .FALSE.
-        failcode = 0
-#ifndef T1
-        DO testrun = 1, NUM_TEST_CALLS
-          failed = failed .or. test1()
-        END DO
-        IF (failed) THEN
-          failcode = failcode + 2 ** 0
-          failed = .FALSE.
-        END IF
-#endif
-        CALL EXIT (failcode)
-      END PROGRAM

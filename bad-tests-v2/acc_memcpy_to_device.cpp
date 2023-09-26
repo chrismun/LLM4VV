@@ -1,24 +1,31 @@
 #include "acc_testsuite.h"
+#include <cassert>
+
 #ifndef T1
-//T1: acc_memcpy_to.0
+/*T1:acc memcpy to device,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
-    //multiplicat tuoer
-    //One can not directly call on d_array
-    //initially on device
-    int * devtest = (int *)acc_copyin(mic, hosttest, SIZE);
-    //array to copy from the device
-    int testcopy[5];
-    for(int x = 0; x < 10*SIZE; x++){
-        hostdata[x] += 1;
-        //(device clobber) array/index 
-        if(){
-            err = 1;
-            return err;
-        }
+    size_t bytes = sizeof(int)*100;     // size for 100 integers
+    int* host_data = (int *)malloc(bytes);    // allocate host memory
+    int* dev_data = 
+      (int *)acc_malloc(bytes);    // allocate device memory
+    for (int i = 0; i < 100; ++i){
+        host_data[i] = rand()%100;
     }
 
+    acc_memcpy_to_device(dev_data, host_data, bytes);
+
+    // check copied data
+    for (int i = 0; i < 100; ++i){
+        if (acc_memcpy_from_device(host_data[i], dev_data[i], sizeof(int)) != 0) {
+            err = 1;
+            break;
+        }
+    }
+    // free the allocated memory
+    acc_free(dev_data);
+    free(host_data);
     return err;
 }
 #endif

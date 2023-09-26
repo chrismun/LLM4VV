@@ -1,32 +1,31 @@
 #include "acc_testsuite.h"
 #ifndef T1
-#define V 2
 //T1:data construct attach clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
-    real_t * a = new real_t[n];
-    real_t * b = new real_t[n];
 
-    for (int x = 0; x < n; ++x){
-        a[x] = 0.0;
-        b[x] = 0.0;
-    }
+    // Create a pointer to a shared memory region
+    int* shared_ptr = (int*)malloc(sizeof(int));
 
-    #pragma acc enter data create(a[0:n]) create(b[0:n])
-    #pragma acc update device(a[0:n]) device(b[0:n])
-    #pragma acc data present(a[0:n], b[0:n])
+    // Create a pointer to a non-shared memory region
+    int* non_shared_ptr = (int*)malloc(sizeof(int));
+
+    // Attach the non-shared memory region to the shared memory region
+    #pragma acc attach(non_shared_ptr, shared_ptr)
+
+    // Perform some operations on the shared memory region
+    #pragma acc parallel
     {
-        for (int x = 0; x < n; ++x){
-            a[x] = b[x];
-        }
+        // ...
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
-            err += 1;
-        }
-    }
+    // Detach the non-shared memory region from the shared memory region
+    #pragma acc detach(non_shared_ptr, shared_ptr)
+
+    // Free the memory
+    free(shared_ptr);
+    free(non_shared_ptr);
 
     return err;
 }

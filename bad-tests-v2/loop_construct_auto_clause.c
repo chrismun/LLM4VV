@@ -1,22 +1,22 @@
 #include "acc_testsuite.h"
 
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:loop construct auto clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int data[10];
-    for (int i = 0; i < 10; i++) {
+    int data[100];
+    for (int i = 0; i < 100; i++) {
         data[i] = rand() % 100;
     }
 
-    #pragma acc loop auto
-    for (int i = 0; i < 10; i++) {
-        data[i] = data[i] + 1;
+    #pragma acc parallel loop auto
+    for (int i = 0; i < 100; i++) {
+        data[i] += 1;
     }
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 100; i++) {
         if (data[i] != i + 1) {
             err = 1;
             break;

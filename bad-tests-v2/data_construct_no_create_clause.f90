@@ -6,29 +6,41 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(KIND=8),DIMENSION(10):: a, b, c
-        INTEGER:: device_index
-        INTEGER:: x
-        device_index = acc_get_device_num(acc_get_device_type())
-        a = 1
-        b = 2
-        c = 0
+        INTEGER, POINTER :: ptr(:)
+        INTEGER, TARGET :: array(10)
 
-        !$acc data copyin(a(1:10))
-          !$acc parallel present(malo) copyout(c(1:10))
-            { 
-            {!$acc target loop independent}
-            for (x = 0; x < 10; ++x){
-              c[x] = (a[x] + b[x]);
-            }
-          }
-          !$acc end parallel
+        !$acc data no_create(array)
         !$acc end data
-        DO x = 0, 9
-          IF (abs(c(x + 1) - (a(x + 1) + b(x + 1))) .gt. PRECISION) THEN
-            errors = errors + 1
-          END IF
-        END DO
+
+        !$acc data no_create(ptr)
+        !$acc end data
+
+        !$acc parallel present(array, ptr)
+        !$acc end parallel
+
+        !$acc data no_create(array)
+        !$acc end data
+
+        !$acc data no_create(ptr)
+        !$acc end data
+
+        !$acc kernels present(array, ptr)
+        !$acc end kernels
+
+        !$acc data no_create(array)
+        !$acc end data
+
+        !$acc data no_create(ptr)
+        !$acc end data
+
+        !$acc serial present(array, ptr)
+        !$acc end serial
+
+        !$acc data no_create(array)
+        !$acc end data
+
+        !$acc data no_create(ptr)
+        !$acc end data
 
         IF (errors .eq. 0) THEN
           test1 = .FALSE.

@@ -6,33 +6,29 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(KIND=8),DIMENSION(10)::a, b
-        REAL(KIND=8):: c
+        INTEGER :: a = 10
+        INTEGER :: b = 20
+        INTEGER :: c = 30
+        INTEGER :: d = 40
+        INTEGER, DIMENSION(LOOPCOUNT) :: hostArray, hostArray2
+        INTEGER, DIMENSION(LOOPCOUNT) :: deviceArray, deviceArray2
 
+        hostArray = 5
+        hostArray2 = 10
 
-        !$acc data copy(a(1:10)) 
-          c = 1
-          !$acc kernels firstprivate(c)
-          !$acc loop 
-          DO test = 1, 600
-		
-            !$acc loop independent
-            DO i = 1, 10
-            c = 1
-              a(i) = a(i) + c
-            END DO
-            
-          END DO    
-          !$acc end kernels
+        !$acc kernels firstprivate(a, b)
+          deviceArray = hostArray + a
+          deviceArray2 = hostArray2 + b
+        !$acc end kernels
 
-        !$acc end data
-
-        DO i = 1, 10
-          x = x + a(i)
+        DO i = 1, LOOPCOUNT
+          IF (deviceArray(i) .ne. (hostArray(i) + a)) THEN
+            errors = errors + 1
+          END IF
+          IF (deviceArray2(i) .ne. (hostArray2(i) + b)) THEN
+            errors = errors + 1
+          END IF
         END DO
-        IF x .eq. 0 THEN 
-          errors = errors + 1
-        ENDIF
 
         IF (errors .eq. 0) THEN
           test1 = .FALSE.

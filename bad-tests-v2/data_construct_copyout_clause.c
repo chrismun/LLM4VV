@@ -3,46 +3,35 @@
 //T1:data construct copyout clause,V:2.7-3.3
 int test1(){
     int err = 0;
-    srand(SEED);
+    float a = rand()/(float)RAND_MAX;
+    float b = 0.0;
+    float host, device;
 
-    // Create and initialize input and output arrays
-    int size = 10;
-    int *in = (int*)malloc(size * sizeof(int));
-    int *out = (int*)malloc(size * sizeof(int));
-    for (int i = 0; i < size; ++i) {
-        in[i] = rand() % 100;
-        out[i] = 0;
-    }
+    host = a;
 
-    // Copy input array to device
-    #pragma acc data copyin(in[:size])
-
-    // Perform computation on device
-    #pragma acc parallel loop
-    for (int i = 0; i < size; ++i) {
-        out[i] = in[i] * 2;
-    }
-
-    // Copy output array back to host
-    #pragma acc update host(out[:size])
-
-    // Verify the result
-    for (int i = 0; i < size; ++i) {
-        if (out[i] != in[i] * 2) {
-            err = 1;
-            break;
+    #pragma acc data copyout(b)
+    {   
+        #pragma acc parallel num_workers(128)
+        {
+            #pragma acc loop worker
+            for(int i = 0; i < 128; i++){
+                b = a;
+            }
         }
+
+        device = b;
     }
 
-    // Clean up
-    free(in);
-    free(out);
+    if(host != device){
+        err = 1;
+    }
 
     return err;
 }
 #endif
 
 int main(){
+    srand(SEED);
     int failcode = 0;
     int failed;
 #ifndef T1
@@ -54,5 +43,9 @@ int main(){
         failcode = failcode + (1 << 0);
     }
 #endif
-    return failcode;
+    if (failcode == 0){
+        return 0;
+    }else{
+        return 1;
+    }
 }

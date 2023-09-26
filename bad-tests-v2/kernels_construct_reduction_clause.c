@@ -1,38 +1,30 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-/*T1:kernels construct reduction clause,V:2.0-2.7*/
+//T1:kernels construct reduction clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int n = 1000;
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
-    real_t sum = 0.0;
+    int a[100];
+    int b[100];
+    int c[100];
 
-    for (int x = 0; x < n; ++x) {
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = rand() / (real_t)(RAND_MAX / 10);
-    }
-
-    #pragma acc kernels copy(a[0:n], b[0:n]) reduction(+:sum)
+    #pragma acc kernels reduction(+:a,b,c)
     {
-        for (int x = 0; x < n; ++x) {
-            sum += a[x] * b[x];
+        for (int i = 0; i < 100; i++) {
+            a[i] = i;
+            b[i] = i;
+            c[i] = i;
         }
     }
 
-    real_t expected_sum = 0.0;
-    for (int x = 0; x < n; ++x) {
-        expected_sum += a[x] * b[x];
+    for (int i = 0; i < 100; i++) {
+        if (a[i] != b[i] + c[i]) {
+            err = 1;
+            break;
+        }
     }
-
-    if (fabs(sum - expected_sum) > PRECISION) {
-        err = 1;
-    }
-
-    free(a);
-    free(b);
 
     return err;
 }

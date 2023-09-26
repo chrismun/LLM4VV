@@ -1,91 +1,53 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:declare directive link clause,V:2.7-3.3
+//T1:known,declare,runtime,link,construct-independent,//
 int test1(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
+    real_t * d = (real_t *)malloc(n * sizeof(real_t));
+    real_t * devdata, * devdata2, * hostdata;;
 
-    int *a = (int *)malloc(n * sizeof(int));
-    int *b = (int *)malloc(n * sizeof(int));
-    int *c = (int *)malloc(n * sizeof(int));
-    int *a_host = (int *)malloc(n * sizeof(int));
-    int *results = (int *)malloc(10 * n * sizeof(int));
-    real_t temp = 0.;
+    devdata = (real_t *)acc_malloc(n * sizeof(real_t));
+    devdata2 = (real_t *)acc_malloc(n * sizeof(real_t)));
+    create_data(n, a);
+    create_data(n, b);
+    create_data(n, c);
+    create_data(n, d);
 
-    for (int x = 0; x < n; ++x){
-        a[x] = x;
-        a_host[x] = x;
-        b[x] = 1;
-        c[x] = 0;
-    }
-
-    #pragma acc data copyin(a[0:n]) copy(b[0:n]) copyout(c[0:n])
+    #pragma acc data copyin(a[0:n], b[0:n], c[0:n]) copy(devdata[0:n], devdata2[0:n]) copyout(d[0:n])
     {
-        #pragma acc declare device(link(c))
+        #pragma acc declare deviceptr(devdata)
+        #pragma acc declare deviceptr(devdata2)
+        #pragma acc link(devdata[0:n])
+        #pragma acc link(devdata2[0:n])
         {
-            #pragma acc parallel present(c[0:n])
+            #pragma acc parallel
             {
                 #pragma acc loop
-                for (int x = 0; x < n; ++x){
-                    c[x] = c[x] + a[x];
+                for (int x = 0; x < n; ++x) {
+                    devdata[x] = a[x] + b[x];
                 }
-            }
-            #pragma acc parallel present(c[0:n])
-            {
                 #pragma acc loop
-                for (int x = 0; x < n; ++x){
-                    c[x] = c[x] + b[x];
+                for (int x = 0; x < n; ++x) {
+                    devdata2[x] = c[x] + devdata[x];
                 }
             }
-
         }
-        #pragma acc parallel present(c[0:n])
+        #pragma acc parallel
         {
             #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                c[x] = c[x] + b[x];
+            for (int x = 0; x < n; ++x) {
+                d[x] += devdata2[x];
             }
         }
     }
 
     for (int x = 0; x < n; ++x){
-        if (fabs(c[x] - (a[x] + 2 * b[x])) > PRECISION){
+        if (fabs(d[x] - (a[x] + b[x] + c[x]))) > PRECISION){
             err += 1;
         }
-    }
-
-    for (int x = 0; x < n; ++x){
-        results[x] = 0;
-    }
-    for (int x = 0; x < n; ++x){
-        results[x + n * 1] = 1;
-    }
-    for (int x = 0; x < n; ++x){
-        results[x + n * 2] = x;
-    }
-    for (int x = 0; x < n; ++x){
-        results[x + n * 3] = x + 1;
-    }
-    for (int x = 2; x < n; ++x){
-        results[x] += results[x - 2];
-    }
-    temp = 0;
-    for (int x = 0; x < n; ++x){
-        temp += results[x];
-    }
-    temp = temp / n;
-    for (int x = 0; x < n; ++x){
-        if (fabs(temp - results[x + n * 4]) > PRECISION){
-            err += 1;
-        }
-    }
-    temp = 0;
-    for (int x = 0; x < n; ++x){
-        temp += a[x];
-    }
-    temp = temp / n;
-    if (fabs(temp - a[0]) > PRECISION){
-        err += 1;
     }
 
     return err;

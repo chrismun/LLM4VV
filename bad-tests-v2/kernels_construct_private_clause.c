@@ -1,24 +1,31 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
 //T1:kernels construct private clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-	int privately_kept = 0;
-	int num_gangs = acc_get_num_gangs(acc_get_device_type());
-	int gangs_loop = 2;
+    int *a = (int *)malloc(sizeof(int) * 10);
+    int *b = (int *)malloc(sizeof(int) * 10);
 
-	#pragma acc parallel
-	{
-		#pragma acc loop gang private(privately_kept)
-		for (int x = 0; x < gangs_loop; ++x){
-			privately_kept = (7 << 25);
-		}
-	}
-	if (privately_kept == (7 << 25)){
-		err += 1;
-	}
+    #pragma acc kernels private(a, b)
+    {
+        for (int i = 0; i < 10; i++) {
+            a[i] = i;
+            b[i] = i;
+        }
+    }
+
+    for (int i = 0; i < 10; i++) {
+        if (a[i] != b[i]) {
+            err = 1;
+            break;
+        }
+    }
+
+    free(a);
+    free(b);
 
     return err;
 }

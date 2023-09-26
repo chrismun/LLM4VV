@@ -1,10 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <openacc.h>
-
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.001
-
+#include "acc_testsuite.h"
+#ifndef T2
+//T2:kernels,data,declare,V:2.0-2.7
 int test2(){
     int err = 0;
     srand(SEED);
@@ -16,9 +12,10 @@ int test2(){
         b[x] = 0;
     }
 
-    #pragma acc declare device_resident(a, b)
+    #pragma acc declare create(a[0:n]) device_resident
+    #pragma acc data copyin(a[0:n])
     {
-        #pragma acc kernels
+        #pragma acc kernels copyout(b[0:n])
         {
             #pragma acc loop
             for (int x = 0; x < n; ++x){
@@ -35,6 +32,7 @@ int test2(){
 
     return err;
 }
+#endif
 
 int main(){
     int failcode = 0;

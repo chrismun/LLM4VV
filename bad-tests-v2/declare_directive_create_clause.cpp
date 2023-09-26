@@ -1,14 +1,39 @@
 #include "acc_testsuite.h"
 #ifndef T1
-//T1:declare directive create clause,V:2.7-3.3
+/*Test for OpenACC declare directive create clause,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
 
-    if(){
-        err = 1;
+    // Declare a variable
+    int *p;
+    const int size = 10;
+
+    // Allocate memory using create clause
+    #pragma acc declare create(p[0:size])
+
+    p=(int*)malloc(size*sizeof(int));
+    // Fill the variable
+    for(int i = 0; i < size; ++i)
+    {
+        p[i] = rand();
     }
 
+    // Perform operation on the variable
+    #pragma acc parallel loop
+    for(int i = 0; i < size; ++i)
+    {
+        p[i] *= 2;
+    }
+
+    // Check results
+    for(int i = 0; i < size; ++i)
+    {
+        if(p[i] % 2 != 0){
+            err = 1;
+        }
+    }
+    free(p);
     return err;
 }
 #endif
@@ -16,41 +41,15 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
+
 #ifndef T1
     failed = 0;
-    int ishost;
-	int *host = (int *)malloc(n * sizeof(int));
-	int *test = (int *)malloc(n * sizeof(int));
-	int *a = (int *)malloc(n * sizeof(int));
-	int *b = (int *)malloc(n * sizeof(int));
-	for (int x = 0; x < iterations; ++x){
-    	for (int y = 0; y < n; ++y){
-        	a[y] = 1;
-        	b[y] = 1;
-    	}
-    	#pragma acc data copyin(a[0:n]) create(test[0:n]) copyout(b[0:n])
-    	{
-        	#pragma acc parallel
-        	{
-            	test[0] = 0;
-            	#pragma acc loop
-            	for (int k = 0; k < n; ++k){
-                	#pragma acc atomic
-                	*(test + k) = *(test + k) + 1;
-            	}
-            	#pragma acc loop
-            	for (int k = 0; k < n; ++k){
-                	b[k] = a[k] + test[k];
-            	}
-        	}
-        	for (int y = 0; y < n; ++y){
-            		host[y] = 1 + a[y];
-        	}
-        	if (comp_vectors(host, b, n, 0) < 2){
-            	err += 1;
-        	}
-    	}
-	}
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
 #endif
     return failcode;
 }

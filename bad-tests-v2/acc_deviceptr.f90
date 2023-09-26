@@ -6,62 +6,32 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8), DIMENSION(:), ALLOCATABLE :: host_array, device_array
-        TYPE(C_PTR) :: device_ptr
-
+        TYPE(c_ptr) :: device_ptr
+        
+        ! Allocate a host array
+        INTEGER, DIMENSION(:), ALLOCATABLE :: host_array
         ALLOCATE(host_array(10))
-        host_array = 1.0
-
-        !$acc enter data copyin(host_array)
-        !$acc parallel present(host_array)
-          device_ptr = acc_deviceptr(host_array)
-          IF (C_ASSOCIATED(device_ptr)) THEN
-            ALLOCATE(device_array(SIZE(host_array)))
-            !$acc enter data create(device_array)
-            !$acc update device(device_array)
-            device_array = 2.0
-            !$acc update host(device_array)
-            !$acc exit data delete(device_array)
-          ELSE
-            errors = errors + 1
-          END IF
-        !$acc end parallel
-        !$acc exit data delete(host_array)
-
-        IF (ALLOCATED(device_array)) THEN
-          IF (ALL(device_array == 2.0)) THEN
-            DEALLOCATE(device_array)
-          ELSE
-            errors = errors + 1
-          END IF
+        
+        ! Copy the host array to the device
+        CALL acc_copyin(host_array)
+        
+        ! Get the device pointer for the host array
+        device_ptr = acc_deviceptr(host_array)
+        
+        ! Check that the device pointer is not null
+        IF (device_ptr .eq. C_NULL_PTR) THEN
+          errors = errors + 1
         END IF
-
-        IF (errors .eq. 0) THEN
-          test1 = .FALSE.
-        ELSE
-          test1 = .TRUE.
+        
+        ! Free the host array
+        DEALLOCATE(host_array)
+        
+        ! Check that the device pointer is still valid
+        IF (acc_is_present(device_ptr) .eq. 0) THEN
+          errors = errors + 1
         END IF
-      END FUNCTION test1
+        
+        ! Return the number of errors
+        test1 = errors .eq. 0
+      END
 #endif
-
-      PROGRAM main
-        IMPLICIT NONE
-        INTEGER :: failcode, testrun
-        LOGICAL :: failed
-        INCLUDE "acc_testsuite.Fh"
-#ifndef T1
-        LOGICAL :: test1
-#endif
-        failed = .FALSE.
-        failcode = 0
-#ifndef T1
-        DO testrun = 1, NUM_TEST_CALLS
-          failed = failed .or. test1()
-        END DO
-        IF (failed) THEN
-          failcode = failcode + 2 ** 0
-          failed = .FALSE.
-        END IF
-#endif
-        CALL EXIT (failcode)
-      END PROGRAM

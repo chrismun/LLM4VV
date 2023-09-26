@@ -1,13 +1,14 @@
 #include "acc_testsuite.h"
-
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:shutdown directive,V:2.7-3.3
 int test1(){
     int err = 0;
-    srand(SEED);
 
+    // Shutdown all available devices
     #pragma acc shutdown
-    {
+
+    // Check if shutdown was successful
+    if (acc_get_num_devices(acc_device_default) != 0) {
         err = 1;
     }
 

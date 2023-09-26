@@ -1,16 +1,18 @@
 #include "acc_testsuite.h"
-
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+// T1:compute construct if clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
-
-    if (acc_get_num_devices(acc_device_host) > 0) {
-        // If there are any host devices, we can use the if clause
+    int a = rand();
+    int b = 0;
+    #pragma acc parallel loop if(a%2==0) copy(a, b)
+    for(int i=0; i<100; i++){
+        b += a;
+    }
+    if(b != (a%2==0 ? a*100 : 0)){
         err = 1;
     }
-
     return err;
 }
 #endif

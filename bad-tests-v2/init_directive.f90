@@ -6,11 +6,12 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-
-        !$acc init device_type(openacc_device_type)
-        !$acc init device_num(0)
-        !$acc init if(.true.)
-
+        INTEGER :: device_type = 1
+        INTEGER :: device_num = 1
+        INTEGER :: if_clause = 1
+        
+        !$acc init device_type(device_type) device_num(device_num) if(if_clause)
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE

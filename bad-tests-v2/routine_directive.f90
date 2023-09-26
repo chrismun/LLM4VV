@@ -1,3 +1,4 @@
+fortran
 #ifndef T1
 !T1:routine directive,V:2.7-2.3
       LOGICAL FUNCTION test1()
@@ -7,18 +8,6 @@
         
         INTEGER :: errors = 0
 
-        !$acc routine seq
-        SUBROUTINE my_subroutine()
-          IMPLICIT NONE
-          INTEGER :: i
-          !$acc loop
-          DO i = 1, 10
-            ! Do something
-          END DO
-          !$acc end loop
-        END SUBROUTINE my_subroutine
-
-        CALL my_subroutine()
 
         IF (errors .eq. 0) THEN
           test1 = .FALSE.

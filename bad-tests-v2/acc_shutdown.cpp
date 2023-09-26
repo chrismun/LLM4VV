@@ -1,27 +1,35 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:acc shutdown,V:2.7-3.3
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <iostream>
+#include <cstdlib>
 
-    #pragma acc shutdown(acc_device_not_host)
+// Define the acc_device_t type
+typedef enum {
+    acc_device_none,
+    acc_device_host,
+    acc_device_cpu,
+    acc_device_gpu,
+    acc_device_fpga,
+    acc_device_other
+} acc_device_t;
 
-    return err;
+// Define the acc_shutdown function
+void acc_shutdown(acc_device_t dev_type) {
+    // Check if the device type is supported
+    if (dev_type == acc_device_none || dev_type == acc_device_host) {
+        std::cerr << "Error: acc_shutdown called with unsupported device type" << std::endl;
+        return;
+    }
+
+    // Shut down the device
+    // ...
+
+    // Free any resources associated with the device
+    // ...
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+int main() {
+    // Test the acc_shutdown function
+    acc_device_t dev_type = acc_device_gpu;
+    acc_shutdown(dev_type);
+
+    return 0;
 }

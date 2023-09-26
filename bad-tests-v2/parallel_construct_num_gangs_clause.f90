@@ -6,43 +6,36 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8),DIMENSION(10, 10) :: a, b, c
-        INTEGER :: x, y
-        
-        SEEDDIM(1) = 1
-#if REAL
-        REAL SEEDS(5)
-        SEEDDIM(0) = 5
-#endif
-#if DOUBLE
-        DOUBLE PRECISION SEEDS(5)
-        SEEDDIM(0) = 2
-#endif
-        CALL RANDOM_SEED(PUT=SEEDS)
-        
-        CALL RANDOM_NUMBER(a)
-        CALL RANDOM_NUMBER(b)
-        c = 0
-        
-        !$acc data copyin(a(1:10, 1:10), b(1:10, 1:10)) copyout(c(1:10, 1:10))
-          !$acc parallel num_gangs(2, 5)
-            !$acc loop gang
-            DO y = 1, 2
-              !$acc loop worker
-              DO x = 1, 10
-                c(x, y) = c(x, y) + a(x, y) + b(x, y)
-              END DO
-            END DO
-          !$acc end parallel
-        !$acc end data
+        INTEGER, DIMENSION(3) :: num_gangs
+        INTEGER :: num_gangs_default
+        REAL(8), DIMENSION(:), ALLOCATABLE :: a, b, c
+        INTEGER :: i
 
-        DO y = 1, 2
-          DO x = 1, 10
-            IF (abs(c(x, y) - (a(x, y) + b(x, y))) .gt. PRECISION) THEN
-              errors = errors + 1
-            END IF
-          END DO
+        num_gangs = (/ 1, 2, 3 /)
+        num_gangs_default = 1
+
+        ALLOCATE(a(1000), b(1000), c(1000))
+
+        !$acc parallel num_gangs(num_gangs(1), num_gangs(2), num_gangs(3))
+        DO i = 1, 1000
+          a(i) = 1.0
+          b(i) = 2.0
         END DO
+        !$acc end parallel
+
+        !$acc parallel num_gangs(num_gangs_default)
+        DO i = 1, 1000
+          c(i) = a(i) + b(i)
+        END DO
+        !$acc end parallel
+
+        DO i = 1, 1000
+          IF (c(i) .ne. 3.0) THEN
+            errors = errors + 1
+          END IF
+        END DO
+
+        DEALLOCATE(a, b, c)
 
         IF (errors .eq. 0) THEN
           test1 = .FALSE.

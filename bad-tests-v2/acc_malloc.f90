@@ -1,27 +1,18 @@
 #ifndef T1
-!T1:acc dV:2.7 t:construct-independent
+!T1:acc malloc,V:2.7-2.3
       LOGICAL FUNCTION test1()
         USE OPENACC
         IMPLICIT NONE
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-
-
-        IF (acc_on_device(acc_get_current_device_num())) THEN
-          !$acc enter data copyin(errors)
-          errors = 0
-          dRef = acc_deviceptr_alloc(&errors, sizeof(real *))
-          IF (IS_DEVICE_PTR(dRef) .eq. false) THEN
-            errors = 1
-          END IF
-          !$acc exit data copyout(errors)
-          IF (errors .ne. 0) THEN
-            test1 = .FALSE.
-            EXIT FUNCTION
-          END IF
+        TYPE(C_PTR) :: ptr
+        
+        ptr = ACC_MALLOC(100)
+        IF (C_ASSOCIATED(ptr)) THEN
+          errors = errors + 1
         END IF
-
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE

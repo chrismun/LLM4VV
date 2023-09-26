@@ -1,27 +1,14 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-//T1:kernels,V:2.7-3.3
+//T1:kernels construct self clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    if (acc_get_device_type() == acc_device_none){
-        return 0;
-    }
-    #pragma acc data copy(err)
+    #pragma acc kernels self(err)
     {
-        #pragma acc kernels self
-        {
-            if (acc_get_device_type() != acc_device_none){
-                err = 1;
-            }
-        }
-        #pragma acc kernels loop reduction(+:err)
-        for (int x = 0; x < 1; ++x){
-            if (acc_get_device_type() == acc_device_host){
-                err = err;
-            }
-        }
+        err = 1;
     }
 
     return err;

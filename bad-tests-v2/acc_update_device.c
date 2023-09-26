@@ -1,42 +1,50 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <acc/acc.h>
+#include "acc_testsuite.h"
+#ifndef T2
+//T2:kernels,data,data-region,V:2.0-2.7
+int test2(){
+    int err = 0;
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.001
-
-int main() {
-    int failcode = 0;
-    int failed;
-
-    // Initialize the array on the host
-    int n = 100;
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    for (int i = 0; i < n; i++) {
-        a[i] = i;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    // Copy the array to the device
-    real_t *d_a;
-    acc_copyin(a, n * sizeof(real_t));
+    #pragma acc data copyin(a[0:n]) copy(b[0:n])
+    {
+        #pragma acc kernels
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
+        #pragma acc update device(b[0:n])
+    }
 
-    // Update the values of the array on the device
-    acc_update_device(d_a, n * sizeof(real_t));
-
-    // Copy the updated array back to the host
-    acc_copyout(a, n * sizeof(real_t));
-
-    // Verify that the values of the array have been updated correctly
-    for (int i = 0; i < n; i++) {
-        if (fabs(a[i] - i) > PRECISION) {
-            failcode = failcode + (1 << 0);
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
         }
     }
 
-    // Free the memory on the device
-    acc_free(d_a);
+    return err;
+}
+#endif
 
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T2
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
+    }
+#endif
     return failcode;
 }

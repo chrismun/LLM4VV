@@ -6,40 +6,36 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8), DIMENSION(LOOPCOUNT):: a, a_host
-        INTEGER:: x
+        INTEGER :: async_arg
+        INTEGER :: bytes
+        INTEGER :: data_arg
+        INTEGER :: device_memory
+        INTEGER :: local_memory
         
-        !host variable separate 
-        a = 0
-        a_host = 0
+        ! Initialize the data section
+        data_arg = 1
+        bytes = 4
+        local_memory = 1
+        device_memory = 1
         
-        SEEDDIM(1) = 1
-        #if REAL_IS_DOUBLE
-              SEEDDIM(2) = 7823
-        #else
-              SEEDDIM(2) = 17823
-        #endif
-        DO x = 1, LOOPCOUNT
-              a_host(x) = rand(SEEDDIM) 
-        END DO
-
-        acc_copyin(a(1:LOOPCOUNT ))
+        ! Call the acc_update_device routine
+        CALL acc_update_device(data_arg, bytes)
         
-        !$acc update device(a(1:LOOPCOUNT))
-        
-        DO x = 1, LOOPCOUNT
-          IF(a(x) - a_host(x).gt. PRECISION)THEN
-            errors = errors + 1
-          END IF
-        END DO
-        !$acc end distribute 
-        !$acc exit data delete(a(1:LOOPCOUNT ) )
-
-        IF (errors .eq. 0) THEN
-          test1 = .FALSE.
-        ELSE
-          test1 = .TRUE.
+        ! Check if the data has been updated in device memory
+        IF (device_memory .NE. local_memory) THEN
+          errors = errors + 1
         END IF
+        
+        ! Call the acc_update_self routine
+        CALL acc_update_self(data_arg, bytes)
+        
+        ! Check if the data has been updated in local memory
+        IF (local_memory .NE. device_memory) THEN
+          errors = errors + 1
+        END IF
+        
+        ! Return the number of errors
+        test1 = errors .EQ. 0
       END
 #endif
 

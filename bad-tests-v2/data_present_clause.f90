@@ -1,59 +1,54 @@
+fortran
 #ifndef T1
 !T1:data present clause,V:2.7-2.3
       LOGICAL FUNCTION test1()
         USE OPENACC
         IMPLICIT NONE
         INCLUDE "acc_testsuite.Fh"
-
+        
         INTEGER :: errors = 0
-	      REAL(8),DIMENSION(LOOPCOUNT, 10):: a, b, c
-	      INTEGER,DIMENSION(LOOPCOUNT, 2):: devtest
-	      INTEGER:: x, y, temp
-	      REAL(8):: pivot
-                                
-       	devtest = 1
-       	IF (acc_is_present(devtest)) THEN
-           	 acc_update_device(devtest, sizeof(devtest(1,1)))
-       	ELSE
-           	acc_create(devtest, sizeof(devtest(1,1)))
-       	END IF
-
-        !$acc enter data copyin(devtest(1:LOOPCOUNT, 1:2))
-       	DO x = 1, LOOPCOUNT
-           	pivot = 0
-           	DO y = 1, 10
-               	a(x, y) = a(x, y) + pivot
-               	b(x, y) = b(x, y) + pivot
-               	pivot = pivot + 1
-           	END DO
-           	c(x, 1) = 0
-       	END DO
-        !$acc data copyout(c(1:LOOPCOUNT, 1:1))) present(a(1:LOOPCOUNT,1:10), b(1:LOOPCOUNT, 1:10))
-          !$acc parallel
-            !$acc loop
-            DO x = 1, LOOPCOUNT
-              temp = 0
-              DO y = 1, 10
-                temp = temp + a(x, y) + b(x, y)
-              END DO
-              c(x, 1) = temp / 20
-            END DO
-          !$acc end parallel
-        !$acc end data
-        DO x = 1, LOOPCOUNT
-          DO y = 1, 10
-            IF (abs(c(x, 1) - (a(x, y) + b(x, y)) / 2) .gt. PRECISION) THEN
-              errors = errors + 1
-          END DO
-        END DO
-
-        acc_delete(devtest, sizeof(devtest(1, 1)))
-
-        IF (errors .eq. 0) THEN
-          test1 = .FALSE.
-        ELSE
-          test1 = .TRUE.
+        INTEGER :: var1, var2
+        INTEGER :: present_counter
+        LOGICAL :: is_present
+        
+        ! Initialize variables
+        var1 = 1
+        var2 = 2
+        present_counter = 0
+        
+        ! Attach var1 and var2 to the current device
+        CALL acc_attach(var1)
+        CALL acc_attach(var2)
+        
+        ! Increment the present counter for var1 and var2
+        CALL acc_present_increment(var1)
+        CALL acc_present_increment(var2)
+        
+        ! Check if var1 and var2 are present in the current device
+        is_present = acc_present(var1) .AND. acc_present(var2)
+        
+        ! Decrement the present counter for var1 and var2
+        CALL acc_present_decrement(var1)
+        CALL acc_present_decrement(var2)
+        
+        ! Detach var1 and var2 from the current device
+        CALL acc_detach(var1)
+        CALL acc_detach(var2)
+        
+        ! Check if the present counter for var1 and var2 is zero
+        IF (present_counter .EQ. 0) THEN
+          ! If the present counter is zero, delete var1 and var2
+          CALL acc_delete(var1)
+          CALL acc_delete(var2)
         END IF
+        
+        ! Check if the present clause is working properly
+        IF (is_present .EQV. .TRUE.) THEN
+          errors = errors + 1
+        END IF
+        
+        ! Return the number of errors
+        test1 = errors .EQ. 0
       END
 #endif
 

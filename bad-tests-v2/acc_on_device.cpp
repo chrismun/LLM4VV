@@ -1,29 +1,36 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:acc on device,V:2.7-3.3
-int test1(){
-    int err = 0;
-    srand(SEED);
+#include <iostream>
+#include <cstdlib>
 
-    if(!acc_on_device(acc_device_not_host)){
-        err = 1;
+int acc_on_device(acc_device_t dev_type) {
+    // Check if the device type is a host device
+    if (dev_type == acc_device_host) {
+        // If the device type is a host device, check if we are currently executing on the host
+        if (acc_get_device_type() == acc_device_host) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
-    return err;
+    // Check if the device type is not a host device
+    if (dev_type != acc_device_host) {
+        // If the device type is not a host device, check if we are currently executing on a device
+        if (acc_get_device_type() != acc_device_host) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // If the device type is not defined, return an undefined value
+    return -1;
 }
-#endif
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+int main() {
+    // Test the acc_on_device routine with different device types
+    std::cout << "Testing acc_on_device with device type acc_device_host: " << acc_on_device(acc_device_host) << std::endl;
+    std::cout << "Testing acc_on_device with device type acc_device_not_host: " << acc_on_device(acc_device_not_host) << std::endl;
+    std::cout << "Testing acc_on_device with device type acc_device_default: " << acc_on_device(acc_device_default) << std::endl;
+
+    return 0;
 }

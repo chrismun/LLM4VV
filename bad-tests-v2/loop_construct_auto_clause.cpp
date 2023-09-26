@@ -1,29 +1,32 @@
 #include "acc_testsuite.h"
 #ifndef T1
-/*T1:loop construct auto clause,V:2.0-2.7*/
+//T1:loop construct auto clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
-    float a[N];
-    float b = (float)rand() / (float)RAND_MAX;
-    
-    #pragma acc parallel copy(a) 
-    {
-        #pragma acc loop auto
-        for(int i = 0; i < N; i++) {
-            a[i] = (float)i + b;
+
+    // Create a random array of integers
+    int* arr = (int*)malloc(sizeof(int) * 100);
+    for (int i = 0; i < 100; i++) {
+        arr[i] = rand() % 100;
+    }
+
+    // Create a loop construct with the auto clause
+    #pragma acc loop auto
+    for (int i = 0; i < 100; i++) {
+        // Do some computation on the array
+        arr[i] = arr[i] + 1;
+    }
+
+    // Check that the loop iterations are data-independent
+    for (int i = 0; i < 100; i++) {
+        if (arr[i] != arr[i] + 1) {
+            err = 1;
+            break;
         }
     }
 
-    #pragma acc parallel copy(a) 
-    {
-        #pragma acc loop auto
-        for(int i = 0; i < N; i++) {
-            if(a[i] != (float)i + b) {
-                err = 1;
-            }
-        }
-    }
+    free(arr);
     return err;
 }
 #endif

@@ -1,3 +1,4 @@
+fortran
 #ifndef T1
 !T1:host_data construct use_device clause,V:2.7-2.3
       LOGICAL FUNCTION test1()
@@ -6,8 +7,26 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-
-
+        INTEGER :: device_address
+        INTEGER :: host_address
+        INTEGER :: var
+        INTEGER :: i
+        
+        !$acc host_data use_device(var)
+        !$acc parallel loop
+        DO i = 1, 10
+          var = i
+        END DO
+        !$acc end parallel loop
+        !$acc end host_data
+        
+        device_address = acc_get_device_address(var)
+        host_address = acc_get_host_address(var)
+        
+        IF (device_address .ne. host_address) THEN
+          errors = errors + 1
+        END IF
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
@@ -15,7 +34,7 @@
         END IF
       END
 #endif
-
+      
       PROGRAM main
         IMPLICIT NONE
         INTEGER :: failcode, testrun
@@ -37,26 +56,3 @@
 #endif
         CALL EXIT (failcode)
       END PROGRAM
-
-
-#ifndef T1
-!T1:host_data construct use_device clause,V:2.7-2.3
-      LOGICAL FUNCTION test1()
-        USE OPENACC
-        IMPLICIT NONE
-        INCLUDE "acc_testsuite.Fh"
-      INTEGER :: errors = 0
-      errors = PRESENT_HOST_DEVICE_LIST(errors)
-      IF (errors .eq. 0) THEN
-#       ifdef _OPENACC
-        !$acc host_data use_device(x, y, z:n,-q)
-        DO i = 1, y
-          z(i) = x(i)
-        END DO
-#       endif
-      END IF
-
-
-        test1 = .FALSE.
-      END
-#endif

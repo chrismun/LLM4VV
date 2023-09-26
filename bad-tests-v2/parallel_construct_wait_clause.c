@@ -1,31 +1,29 @@
 #include "acc_testsuite.h"
+#include <stdlib.h>
+
 #ifndef T1
-//T1:parallel construct wait clause,V:2.7-3.3
+/*T1:parallel construct wait clause,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
 
-    acc_init(acc_device_altera);
-
-    #pragma acc parallel async(1)
+    int h_a = rand();
+    int * d_a = (int *) acc_malloc(sizeof(int));
+    
+    #pragma acc data copyin(h_a) copyout(d_a[0:1]) async(1)
+    #pragma acc parallel present(h_a, d_a[0:1]) async(1)
     {
-        #pragma acc loop
-        for (int i = 0; i < 10; ++i){
-            dev_out = i;
-        }
+          d_a[0] = h_a; 
     }
-    #pragma acc parallel wait(async:1)
-    {
-        #pragma acc loop
-        for (int i = 0; i < 10; ++i){
-            if (dev_out > 9){
-                err += 1;
-            }
-        }
+  
+    #pragma acc wait(1)
+
+    if (d_a[0] != h_a){
+        err = 1;
     }
-
-    acc_shutdown(acc_device_altera);
-
+    
+    acc_free(d_a);
+    
     return err;
 }
 #endif

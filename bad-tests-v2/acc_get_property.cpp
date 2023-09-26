@@ -1,25 +1,23 @@
-#include <iostream>
-#include <cstdlib>
-#include <cstring>
-#include "openacc.h"
-
-#define NUM_TEST_CALLS 1
-#define SEED 1234
+#include "acc_testsuite.h"
+#include <openacc.h>
 
 #ifndef T1
 /*T1:acc get property,V:2.0-2.7*/
 int test1(){
     int err = 0;
-    srand(SEED);
 
-    int dev_num = 0;
-    acc_device_t dev_type = acc_get_device_type(dev_num);
-    acc_device_property_t property = acc_property_memory;
+    // Get the number of devices of type acc_device_default
+    int num_devices = acc_get_num_devices(acc_device_default);
+    if(num_devices < 1){
+        return 1; // No device found
+    }
 
-    size_t memory_size = acc_get_property(dev_num, dev_type, property);
+    // Get the property of the first device
+    size_t mem_size = acc_get_property(0, acc_device_default, acc_property_memory);
 
-    if (memory_size == 0){
-        err = 1;
+    // Check if the memory size is returned correctly
+    if(mem_size == 0){
+        err = 1; // Failed to get the device property
     }
 
     return err;
@@ -32,10 +30,10 @@ int main(){
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+        failed += test1();
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+    if (failed){
+        failcode |= (1 << 0);
     }
 #endif
     return failcode;

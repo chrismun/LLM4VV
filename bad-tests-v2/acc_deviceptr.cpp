@@ -1,45 +1,52 @@
 #include <iostream>
 #include <cstdlib>
-#include "acc_testsuite.h"
-#ifndef T1
-/*T1:acc deviceptr,V:2.0-2.7*/
-int test1(){
+#include <cstring>
+
+#define SEED 12345
+#define NUM_TEST_CALLS 100
+
+int test1() {
     int err = 0;
     srand(SEED);
 
-    int *host_data = (int *)malloc(n * sizeof(int));
-    int *device_data = (int *)acc_malloc(n * sizeof(int));
-
-    for (int x = 0; x < n; ++x){
-        host_data[x] = rand() % n;
+    // Create a host array
+    int* host_array = (int*)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        host_array[i] = i;
     }
 
-    acc_memcpy(device_data, host_data, n * sizeof(int));
+    // Create a device pointer
+    int* device_ptr = (int*)acc_deviceptr(host_array);
 
-    int *device_ptr = (int *)acc_deviceptr(host_data);
-
-    if (device_ptr != device_data){
+    // Check that the device pointer is not null
+    if (device_ptr == nullptr) {
+        std::cout << "Device pointer is null" << std::endl;
         err = 1;
     }
 
-    acc_free(device_data);
-    free(host_data);
+    // Check that the device pointer points to the correct location
+    if (device_ptr != host_array) {
+        std::cout << "Device pointer does not point to the correct location" << std::endl;
+        err = 1;
+    }
+
+    // Free the host array
+    free(host_array);
 
     return err;
 }
-#endif
 
-int main(){
+int main() {
     int failcode = 0;
     int failed;
-#ifndef T1
+
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
         failed = failed + test1();
     }
-    if (failed != 0){
+    if (failed != 0) {
         failcode = failcode + (1 << 0);
     }
-#endif
+
     return failcode;
 }

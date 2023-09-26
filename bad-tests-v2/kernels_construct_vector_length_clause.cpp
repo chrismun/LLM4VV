@@ -1,52 +1,61 @@
-#include "acc_testsuite.h"
+#include <iostream>
+#include <cstdlib>
+#include <cmath>
 
-#ifndef T1
-    /*T1:kernels construct vector_length clause,V:2.0-2.7*/
-    int test1(){
-        int err = 0;
-        srand(SEED);
-        int length = 1000;
-        float vector1[length];
-        float vector2[length];
-        float result[length];
+#define NUM_TEST_CALLS 100
+#define SEED 12345
 
-        // Initialize vector
-        for (int i = 0; i < length; i++) {
-            vector1[i] = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-            vector2[i] = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        }
+int test1() {
+    int err = 0;
+    srand(SEED);
 
-        // Compute   result = vector1 * vector2 using the vector_length clause
-        #pragma acc kernels vector_length(256)
-        for (int i = 0; i < length; i++) {
-            result[i] = vector1[i] * vector2[i];
-        }
+    int vector_length = 4;
+    int num_workers = 10;
+    int num_vectors = 100;
 
-        // Verification
-        for (int i = 0; i < length; i++) {
-            float expected = vector1[i] * vector2[i];
-            if (abs(result[i] - expected) > 1e-5) {
-                err = 1;
-                break;
-            }
-        }
-
-        return err;
+    // Initialize the vector
+    float* vector = new float[num_vectors];
+    for (int i = 0; i < num_vectors; i++) {
+        vector[i] = (float)rand() / RAND_MAX;
     }
-#endif
 
-int main(){
+    // Create the kernels construct
+    #pragma acc kernels vector_length(vector_length)
+    {
+        // Loop over the vectors
+        #pragma acc loop
+        for (int i = 0; i < num_vectors; i++) {
+            // Perform some computation on the vector
+            vector[i] = vector[i] * 2.0f;
+        }
+    }
+
+    // Check the results
+    for (int i = 0; i < num_vectors; i++) {
+        if (vector[i] != 2.0f * (float)rand() / RAND_MAX) {
+            err = 1;
+            break;
+        }
+    }
+
+    // Clean up
+    delete[] vector;
+
+    return err;
+}
+
+int main() {
     int failcode = 0;
     int failed;
 
-#ifndef T1
+    // Run the test
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+    for (int x = 0; x < NUM_TEST_CALLS; x++) {
         failed = failed + test1();
     }
-    if (failed != 0){
+    if (failed != 0) {
         failcode = failcode + (1 << 0);
     }
-#endif
+
     return failcode;
 }

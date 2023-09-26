@@ -1,28 +1,40 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 #include "acc_testsuite.h"
 
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:kernels,data,data-region,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
 
-    // Create a device array
-    int *dev_array;
-    acc_malloc(&dev_array, sizeof(int) * 10);
-
-    // Copy data to the device array
-    acc_memcpy(dev_array, &data, sizeof(int) * 10);
-
-    // Verify that the data was copied correctly
-    for (int i = 0; i < 10; i++) {
-        if (dev_array[i] != data[i]) {
-            err = 1;
-            break;
-        }
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+        c[x] = 0;
     }
 
-    // Free the device array
-    acc_free(dev_array);
+    #pragma acc data copyin(a[0:n]) copy(b[0:n])
+    {
+        #pragma acc kernels
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
+        #pragma acc memcpy(c[0:n], b[0:n])
+    }
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(c[x] - a[x]) > PRECISION){
+            err += 1;
+        }
+    }
 
     return err;
 }

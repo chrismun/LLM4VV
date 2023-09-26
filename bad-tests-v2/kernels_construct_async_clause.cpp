@@ -1,13 +1,36 @@
+#include <stdlib.h>
+#include <openacc.h>
 #include "acc_testsuite.h"
+
 #ifndef T1
-//T1:kernels construct async clause,V:2.7-3.3
+/*T1:Kernels construct async clause,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
-
-    if(){
-        err = 1;
+    int num_elements = 100;
+    float *A = (float*) malloc(sizeof(float)*num_elements);
+    float *B = (float*) malloc(sizeof(float)*num_elements);
+    
+    for(int i=0; i<num_elements; i++){
+        A[i] = (float)rand()/(float)(RAND_MAX);
+        B[i] = (float)rand()/(float)(RAND_MAX);
     }
+
+    #pragma acc kernels async
+    for(int i=0; i<num_elements; i++){
+        B[i] = A[i] + B[i];
+    }
+    
+    #pragma acc wait
+    
+    for(int i=0; i<num_elements; i++){
+        if(A[i]+A[i] - B[i] > PRECISION){
+            err = 1;
+            break;
+        }
+    }
+    free(A);
+    free(B);
 
     return err;
 }
@@ -18,20 +41,9 @@ int main(){
     int failed;
 #ifndef T1
     failed = 0;
-    int IsHost = 0;
-    int *IsHost_ptr = &IsHost;
-
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
     }
-    _Pragma("acc parallel")
-    {
-      _Pragma("acc kernels loop async(1)") _Pragma("host") { sleep(1); } _Pragma("acc end host")
-    }
-    while (acc_is_data_present(IsHost_ptr, sizeof(int))))
-    if(srand(1) RandVar = rand())
-    if (host[CORE_PATH/][RAND]/ (srand(1) RandVar) < 1)
-  
     if (failed != 0){
         failcode = failcode + (1 << 0);
     }

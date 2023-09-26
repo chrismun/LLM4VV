@@ -1,41 +1,30 @@
-#include "acc_testsuite.h"
-
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+/*T1:data construct copyin clause,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
+    
+    int* host_array = (int*)malloc(100*sizeof(int));
+    for (int i = 0; i < 100; i++) host_array[i] = i;
 
-    int* a = (int*)malloc(sizeof(int));
-    int* b = (int*)malloc(sizeof(int));
-    int* c = (int*)malloc(sizeof(int));
-
-    #pragma acc enter data copyin(a[0:10], b[0:10], c[0:10])
+    int* device_array;
+    #pragma acc enter data copyin(host_array[0:100])
+    #pragma acc parallel present(host_array)
     {
-        // Do some work with the data
+        device_array = (int*)acc_deviceptr(host_array);
     }
 
-    #pragma acc exit data delete(a[0:10], b[0:10], c[0:10])
+    for(int i = 0; i < 100; i++) {
+        if (host_array[i] != device_array[i]) {
+            err = 1;
+            break;
+        }
+    }
 
-    free(a);
-    free(b);
-    free(c);
+    #pragma acc exit data delete(host_array[0:100])
+
+    free(host_array);
 
     return err;
 }
 #endif
-
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
-}

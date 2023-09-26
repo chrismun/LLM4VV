@@ -1,34 +1,57 @@
 #include "acc_testsuite.h"
 
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:loop construct tile clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    // Set up the tile sizes
-    int tile_sizes[3] = {16, 32, 64};
+    int tile_size = 16;
+    int num_tiles = 4;
+    int num_elements = 1024;
 
-    // Set up the loop nest
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                // Do some work
+    // Create a 2D array of size num_tiles x num_elements
+    int** tile_array = (int**)malloc(num_tiles * sizeof(int*));
+    for (int i = 0; i < num_tiles; i++) {
+        tile_array[i] = (int*)malloc(num_elements * sizeof(int));
+    }
+
+    // Initialize the array with random values
+    for (int i = 0; i < num_tiles; i++) {
+        for (int j = 0; j < num_elements; j++) {
+            tile_array[i][j] = rand() % 100;
+        }
+    }
+
+    // Tile the array
+    for (int i = 0; i < num_tiles; i++) {
+        for (int j = 0; j < num_elements; j += tile_size) {
+            int tile_start = j;
+            int tile_end = j + tile_size - 1;
+            if (tile_end >= num_elements) {
+                tile_end = num_elements - 1;
+            }
+            for (int k = tile_start; k <= tile_end; k++) {
+                tile_array[i][k] = tile_array[i][k] + 1;
             }
         }
     }
 
-    // Check that the tile sizes are correct
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                if (tile_sizes[i] != 16 || tile_sizes[j] != 32 || tile_sizes[k] != 64) {
-                    err = 1;
-                    break;
-                }
+    // Check the result
+    for (int i = 0; i < num_tiles; i++) {
+        for (int j = 0; j < num_elements; j++) {
+            if (tile_array[i][j] != (rand() % 100) + 1) {
+                err = 1;
+                break;
             }
         }
     }
+
+    // Free the memory
+    for (int i = 0; i < num_tiles; i++) {
+        free(tile_array[i]);
+    }
+    free(tile_array);
 
     return err;
 }

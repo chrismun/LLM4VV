@@ -1,3 +1,4 @@
+fortran
 #ifndef T1
 !T1:declare directive device_resident clause,V:2.7-2.3
       LOGICAL FUNCTION test1()
@@ -6,34 +7,32 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8), ALLOCATABLE, DEVICE_RESIDENT :: a(:)
-        INTEGER :: n = 1000
-
-        ALLOCATE(a(n))
-        a = 1.0
-
-        !$acc parallel loop device_resident(a)
-        DO i = 1, n
-          a(i) = a(i) + 1.0
+        REAL, DIMENSION(10) :: a, b, c
+        REAL, DIMENSION(10) :: d, e, f
+        COMMON /my_common/ a, b, c
+        COMMON /my_common/ d, e, f
+        
+        !$acc declare device_resident(a, b, c)
+        !$acc declare device_resident(d, e, f)
+        
+        !$acc parallel
+        !$acc loop
+        DO i = 1, 10
+          a(i) = b(i) + c(i)
+          d(i) = e(i) + f(i)
         END DO
-        !$acc end parallel loop
-
-        DO i = 1, n
-          IF (a(i) .ne. 2.0) THEN
-            errors = errors + 1
-          END IF
-        END DO
-
-        DEALLOCATE(a)
-
+        !$acc end parallel
+        
+        !$acc end declare
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
           test1 = .TRUE.
         END IF
-      END FUNCTION test1
+      END
 #endif
-
+      
       PROGRAM main
         IMPLICIT NONE
         INTEGER :: failcode, testrun

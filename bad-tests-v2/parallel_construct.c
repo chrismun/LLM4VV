@@ -1,12 +1,33 @@
-#include "acc_testsuite.h"
 #ifndef T1
-//T1:parallel construct,V:2.7-3.3
+//T1:parallel,async,wait,V:2.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    if(){
-        err = 1;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+    }
+
+    #pragma acc data copyin(a[0:n]) copy(b[0:n])
+    {
+        #pragma acc parallel present(a[0:n], b[0:n]) wait(1)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
+        #pragma acc update host(b[0:n]) async(1)
+    }
+    #pragma acc wait(1)
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err = 1;
+        }
     }
 
     return err;

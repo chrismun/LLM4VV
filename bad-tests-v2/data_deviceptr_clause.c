@@ -1,39 +1,36 @@
 #include "acc_testsuite.h"
-
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
+#ifndef T2
+//T2:kernels,data,data-region,devptr,V:2.0-2.7
+int test2(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * d = (real_t *)acc_malloc(n * sizeof(real_t));
 
-    int *a = (int *)malloc(sizeof(int) * 10);
-    int *b = (int *)malloc(sizeof(int) * 10);
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+    }
 
     #pragma acc data deviceptr(a, b)
     {
-        for (int i = 0; i < 10; i++) {
-            a[i] = i;
-            b[i] = i;
+        #pragma acc kernels present(a, b, d[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                d[x] = a[x] + b[x];
+            }
         }
     }
 
-    #pragma acc parallel loop deviceptr(a, b)
-    for (int i = 0; i < 10; i++) {
-        a[i] += b[i];
-    }
-
-    #pragma acc end parallel loop
-
-    for (int i = 0; i < 10; i++) {
-        if (a[i] != i + i) {
-            err = 1;
-            break;
+    for (int x = 0; x < n; ++x){
+        if (fabs(d[x] - (a[x] + b[x])) > PRECISION){
+            err += 1;
         }
     }
 
-    free(a);
-    free(b);
-
+    acc_free(d);
     return err;
 }
 #endif
@@ -41,13 +38,13 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+#ifndef T2
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+        failed = failed + test2();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 0);
+        failcode = failcode + (1 << 1);
     }
 #endif
     return failcode;

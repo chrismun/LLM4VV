@@ -1,27 +1,18 @@
 #include "acc_testsuite.h"
 #ifndef T1
-//T1:serial construct firstprivate clause,V:2.7-3.3
+/*T1:serial construct firstprivate clause,V:2.0-2.7*/
+
 int test1(){
     int err = 0;
     srand(SEED);
+    int value = rand();
 
-    int total = 0;
-    int known_total = 0;
-
-    for (int x = 0; x < loopcount; ++x){
-        total = 0;
-        #pragma acc serial firstprivate(total)
-        {
-            total += x;
-        }
-
-        known_total += x;
-
-        if (total != known_total){
-            err += 1;
+    #pragma acc serial firstprivate(value)
+    {
+        if (value != rand()){
+            err = 1;
         }
     }
-
     return err;
 }
 #endif

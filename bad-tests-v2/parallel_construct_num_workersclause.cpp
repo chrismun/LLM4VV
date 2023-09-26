@@ -1,38 +1,42 @@
 #include "acc_testsuite.h"
-#ifndef T1
-/*T1:parallel construct num_workersclause,V:2.0-2.7*/
-int test1(){
+#include <openacc.h>
+
+// Testing the parallel construct num_workersclause
+int testNumWorkers(){
     int err = 0;
-    srand(SEED);
+    int total = 100;
 
-    int num_workers = 4; // Choose a value for num_workers
-    int gang_size = 16; // Choose a value for gang_size
+    // defining an array to be computed in parallel
+    int a[total];
 
-    #pragma acc parallel num_workers(num_workers) gang(gang_size)
+    // initializing data
+    for(int i=0; i<total; i++)
+        a[i] = i;
+
+    #pragma acc parallel num_workers(4) copy(a)
     {
-        int worker_id = acc_get_thread_id();
-        int num_active_workers = acc_get_num_workers();
+        #pragma acc loop
+        for(int i=0; i<total; i++)
+            a[i]*= 2;
+    }
 
-        if (worker_id >= num_active_workers) {
+    // validation check
+    for(int i=0; i<total; i++)
+        if (a[i] != i*2)
             err = 1;
-        }
     }
 
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
+    int failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+        failed = failed + testNumWorkers();
     }
     if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-#endif
     return failcode;
 }

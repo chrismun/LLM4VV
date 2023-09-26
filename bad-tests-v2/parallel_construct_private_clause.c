@@ -1,33 +1,39 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-/*T1:parallel construct private clause,V:2.0-2.7*/
+//T1:parallel construct private clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
 
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = a[x];
-    }
+    int num_gangs = 10;
+    int num_workers = 10;
+    int num_private_vars = 10;
 
-    #pragma acc parallel private(a)
+    // Create a parallel region with num_gangs gangs and num_workers workers
+    #pragma acc parallel num_gangs(num_gangs) num_workers(num_workers)
     {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            a[x] *= 2;
+        // Declare a private variable for each gang
+        int private_var[num_private_vars];
+
+        // Initialize the private variables
+        for (int i = 0; i < num_private_vars; i++) {
+            private_var[i] = i;
+        }
+
+        // Perform some computation on the private variables
+        for (int i = 0; i < num_private_vars; i++) {
+            private_var[i] = private_var[i] + 1;
         }
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(a[x] - b[x]) > PRECISION){
+    // Check that the private variables were properly initialized and computed
+    for (int i = 0; i < num_private_vars; i++) {
+        if (private_var[i] != i + 1) {
             err = 1;
+            break;
         }
     }
-
-    free(a);
-    free(b);
 
     return err;
 }

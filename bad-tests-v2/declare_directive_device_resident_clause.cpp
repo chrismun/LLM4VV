@@ -1,24 +1,44 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-/*T1:declare directive device_resident clause,V:2.0-2.7*/
+//T1:declare directive device_resident clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a;
-    int n = 100;
+    // Declare a variable in device memory
+    int* device_var;
+    device_var = (int*)acc_malloc(sizeof(int));
 
-    #pragma acc enter data copyin(n)
-    #pragma acc declare device_resident(a)
+    // Set the value of the variable in device memory
+    *device_var = 123;
 
-    a = (int*)malloc(n * sizeof(int));
+    // Declare a variable in host memory
+    int* host_var;
+    host_var = (int*)malloc(sizeof(int));
 
-    if (a == NULL){
+    // Set the value of the variable in host memory
+    *host_var = 456;
+
+    // Use the device_resident clause to specify that the variable in device memory should be used
+    acc_device_resident(device_var);
+
+    // Use the device_resident clause to specify that the variable in host memory should be used
+    acc_device_resident(host_var);
+
+    // Check that the value of the variable in device memory is correct
+    if (*device_var != 123){
         err = 1;
     }
 
-    #pragma acc exit data delete(a)
-    free(a);
+    // Check that the value of the variable in host memory is correct
+    if (*host_var != 456){
+        err = 1;
+    }
+
+    // Free the memory allocated for the variables
+    acc_free(device_var);
+    free(host_var);
 
     return err;
 }

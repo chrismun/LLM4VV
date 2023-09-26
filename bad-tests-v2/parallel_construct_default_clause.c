@@ -1,48 +1,40 @@
 #include "acc_testsuite.h"
-#ifndef T1
+#include <stdlib.h>
+
 /*T1:parallel construct default clause,V:2.0-2.7*/
 int test1(){
     int err = 0;
-    srand(SEED);
-    int *a = (int *)malloc(n * sizeof(int));
-    int *b = (int *)malloc(n * sizeof(int));
+    int a = 5;
+    int b = 10;
+    int c = 0;
 
-    for (int x = 0; x < n; ++x) {
-        a[x] = rand() % n;
-        b[x] = 0;
-    }
-
-    #pragma acc parallel default(present) copy(a[0:n]) copyout(b[0:n])
+    #pragma acc parallel default(none)
     {
-        int idx = acc_threadid();
-        b[idx] = a[idx];
+        c = a + b;
     }
 
-    for (int x = 0; x < n; ++x) {
-        if (b[x] != a[x]) {
-            err = 1;
-            break;
-        }
-    }
+    // If 'a' and 'b' were not recognized within the parallel region due to the default(none) clause,
+    // the addition operation won't perform correctly and 'c' will remain 0. Hence we use this fact to validate our test.
 
-    free(a);
-    free(b);
+    if (c == 0){
+        err = 1;
+    }
 
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+    srand(time(0));
+
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+    for (int x = 0; x < 100; ++x){
         failed = failed + test1();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 0);
+        failcode = failcode + 1;
     }
-#endif
+
     return failcode;
 }

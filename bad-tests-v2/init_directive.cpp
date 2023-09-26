@@ -1,13 +1,16 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-/*T1:init directive,V:2.0-2.7*/
+//T1:init directive,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    #pragma acc init device_type(openacc_device_type)
+    // Initialize the runtime for the given device or devices of the given device type
+    #pragma acc init device_type(device_type_list) device_num(int_expr) if(condition)
 
-    if (acc_get_device_type() != openacc_device_type){
+    // Check if the initialization was successful
+    if (acc_get_device_type() != device_type_list[0] || acc_get_device_num() != int_expr) {
         err = 1;
     }
 
@@ -18,6 +21,7 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
+
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
@@ -27,5 +31,6 @@ int main(){
         failcode = failcode + (1 << 0);
     }
 #endif
+
     return failcode;
 }

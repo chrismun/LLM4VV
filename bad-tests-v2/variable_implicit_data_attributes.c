@@ -1,49 +1,34 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 #include "acc_testsuite.h"
+
 #ifndef T1
-//T1:variable implicit data attributes,V:2.7-3.3
+//T1:kernels,data,data-region,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    int * a = (int *)malloc(n * sizeof(int));
-    int device = 0;
-    int errors[10];
-    int _n = n;
-
-    for (int x = 0; x < _n; ++x){
-        a[x] = 1;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    while(_n > 1){
-        errors[device] = 0;
-        #pragma acc data copy(a[0:_n])
+    #pragma acc data copyin(a[0:n])
+    {
+        #pragma acc kernels present(a, b[0:n])
         {
-            #pragma acc parallel
-            {
-                #pragma acc loop
-                for(int x = 0; x < _n; ++x){
-                    a[x] = a[x] + 1;
-                }
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
             }
         }
-
-        for (int x = 0; x < _n/2; ++x){
-            if (a[x] != 2){
-                errors[device] += 1;
-            }
-        }
-        for (int x = _n/2; x < _n; ++x){
-            if (a[x] != 1){
-                errors[device] += 1;
-            }
-        }
-
-        _n = _n/2;
-        device = device + 1;
     }
 
-    for (int x = 0; x < device + 1; ++x){
-        if (errors[x] != 0){
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
             err += 1;
         }
     }

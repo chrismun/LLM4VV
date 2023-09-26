@@ -6,49 +6,26 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8),DIMENSION(LOOPCOUNT):: a, b, c
-        REAL(8),DIMENSION(LOOPCOUNT),DEVICE:: data
-        INTEGER:: x
+        INTEGER :: device_ptr
+        INTEGER :: host_ptr
+        INTEGER :: async_arg
         
-        CALL RANDOM_NUMBER(a)
-        CALL RANDOM_NUMBER(b)
-        c = 0
-        data = 0
-        acc_attach(data)
-        !$acc enter data create(data(1:LOOPCOUNT))
+        ! Create a device pointer
+        device_ptr = acc_malloc(100)
         
-        !$acc data present(a(1:LOOPCOUNT), b(1:LOOPCOUNT), c(1:LOOPCOUNT)) deviceptr(data)
-          DO x = 1, LOOPCOUNT
-            data(x) = a(x) + b(x)
-          END DO
-          DO x = 1, LOOPCOUNT
-            c(x) = data(x)
-          END DO
-        !$acc end data
-        DO x = 1, LOOPCOUNT
-          IF (abs(c(x) - (a(x) + b(x))) .gt. PRECISION) THEN
-            errors = errors + 1
-          END IF
-        END DO
-
-        CALL acc_detach_finalize(data)
-
-        DO x = 1, LOOPCOUNT
-          IF (abs(c(x)) .gt. PRECISION) THEN
-            errors = errors + 1
-          END IF
-        END DO
-
-        CALL acc_detach(data)
-
-        !$acc exit data delete(data(1:LOOPCOUNT))
-
-        DO x = 1, LOOPCOUNT
-          IF (abs(c(x) - (a(x) + b(x))) .gt. PRECISION) THEN
-            errors = errors + 1
-          END IF
-        END DO
-
+        ! Create a host pointer
+        host_ptr = acc_malloc(100)
+        
+        ! Attach the host pointer to the device pointer
+        CALL acc_attach(host_ptr, device_ptr)
+        
+        ! Detach the host pointer from the device pointer
+        CALL acc_detach(host_ptr, device_ptr)
+        
+        ! Finalize the detach
+        CALL acc_detach_finalize(host_ptr, device_ptr)
+        
+        ! Check for errors
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE

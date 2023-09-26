@@ -1,52 +1,55 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:acc detach,V:2.7-3.3
-int test1(){
-	int err = 0;
-	srand(SEED);
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
-    real_t *c = (real_t *)malloc(n * sizeof(real_t));
+#include <iostream>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
+#include <cassert>
+#include <openacc.h>
 
-    #pragma acc data copyin(a[0:n], b[0:n])
-    #pragma acc data copyout(c[0:n])
-    #pragma acc parallel
-    {
-        #pragma acc loop
-        for (int i = 0; i < n; ++i) {
-            c[i] = acc_deviceptr((void *) &c[i]);
-        }
-        #pragma acc loop
-        for (int i = 0; i < n; ++i) {
-            c[i] = a[i] + b[i];
-        }
-        #pragma acc loop
-        for (int i = 0; i < n; ++i) {
-            acc_detach_finalize(&c[i]);
-        }
-    }
+#define NUM_TEST_CALLS 100
+#define SEED 12345
 
-	for (int i = 0; i < n; ++i) {
-		if (fabs(c[i] - (a[i] + b[i])) > PRECISION) {
-			err += 1;
-		}
-	}
+int test1() {
+    int err = 0;
+    srand(SEED);
+
+    // Create a device pointer
+    int *dev_ptr = (int *)acc_malloc(sizeof(int));
+    assert(dev_ptr != NULL);
+
+    // Attach the device pointer to the host pointer
+    int *host_ptr = (int *)acc_attach(dev_ptr);
+    assert(host_ptr != NULL);
+
+    // Detach the device pointer from the host pointer
+    acc_detach(dev_ptr);
+
+    // Check that the device pointer is no longer attached to the host pointer
+    assert(acc_is_attached(dev_ptr) == 0);
+
+    // Free the device pointer
+    acc_free(dev_ptr);
 
     return err;
 }
-#endif
 
-int main(){
+int main() {
     int failcode = 0;
     int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+
+    // Run the test 100 times
+    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
+        failed = test1();
+        if (failed != 0) {
+            failcode = failcode + (1 << x);
+        }
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+
+    // Print the result
+    if (failcode == 0) {
+        std::cout << "Test passed" << std::endl;
+    } else {
+        std::cout << "Test failed" << std::endl;
     }
-#endif
+
     return failcode;
 }

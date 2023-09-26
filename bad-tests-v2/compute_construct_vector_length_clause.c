@@ -1,28 +1,27 @@
 #include "acc_testsuite.h"
 
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:compute construct vector_length clause,V:2.7-3.3
 int test1(){
     int err = 0;
-    srand(SEED);
 
-    int vector_length = 4;
-    int num_workers = 4;
-    int num_vectors = 16;
-
-    // Create a parallel region with the vector_length clause
-    #pragma acc parallel num_workers(num_workers) vector_length(vector_length)
+    // Set the vector length to 4
+    #pragma acc parallel vector_length(4)
     {
-        // Create a loop with the vector clause
+        // Do some vector operations
         #pragma acc loop vector
-        for (int i = 0; i < num_vectors; i++) {
-            // Do some work
+        for (int i = 0; i < 10; i++) {
+            // ...
         }
     }
 
     // Check that the vector length was set correctly
-    if (acc_get_vector_length() != vector_length) {
-        err = 1;
+    #pragma acc parallel
+    {
+        int vector_length = acc_get_vector_length();
+        if (vector_length != 4) {
+            err = 1;
+        }
     }
 
     return err;

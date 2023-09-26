@@ -1,49 +1,51 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:serial construct self clause,V:2.7-3.3
-int test1(){
+#include <iostream>
+#include <cstdlib>
+#include <cmath>
+#include <acc/acc.h>
+
+#define NUM_TEST_CALLS 100
+#define SEED 12345
+
+int test1() {
     int err = 0;
     srand(SEED);
 
-    #pragma acc data copyin(present_vector[0:LENGTH], original_vector[0:LENGTH]) create(self_vector[0:LENGTH])
-    {
-        #pragma acc serial loop self(self_vector[0:LENGTH])
-        for (int x = 0; x < LENGTH; ++x){
-              self_vector[x] = 0.0f;
-        }
+    // Create a serial construct with a self clause
+    acc_serial_construct(acc_self_clause);
 
-        for (int x = 0; x < LENGTH; ++x){
-            self_vector[x] += original_vector[x];
-            for (int y = 0; y < LENGTH; ++y){
-                if (x != y)
-                    self_vector[x] -= self_vector[x] * ((float) (ITERATIONS/2) / (self_vector[x] + (self_vector[x] - present_vector[x])));
+    // Execute some code in the serial construct
+    for (int i = 0; i < 10; i++) {
+        std::cout << "Hello from the serial construct!" << std::endl;
+    }
 
-            }
-            present_vector[x] = self_vector[x] * 2 + 1;
-        }
+    // Check if the self clause was executed on the local device
+    if (acc_self_clause) {
+        std::cout << "The self clause was executed on the local device." << std::endl;
+    } else {
+        std::cout << "The self clause was not executed on the local device." << std::endl;
+    }
 
-        for (int x = 0; x < LENGTH; ++x){
-            if (fabs(present_vector[x] - (self_vector[x] * 2 + 1)) > PRECISION){
-                err += 1;
-            }
-        }
+    // Check if the self clause was executed on the current device
+    if (acc_self_clause) {
+        std::cout << "The self clause was executed on the current device." << std::endl;
+    } else {
+        std::cout << "The self clause was not executed on the current device." << std::endl;
     }
 
     return err;
 }
-#endif
 
-int main(){
+int main() {
     int failcode = 0;
     int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+
+    // Run the test 100 times
+    for (int x = 0; x < NUM_TEST_CALLS; x++) {
+        failed = test1();
+        if (failed != 0) {
+            failcode = failcode + (1 << x);
+        }
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
+
     return failcode;
 }

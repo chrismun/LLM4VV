@@ -1,13 +1,49 @@
 #include "acc_testsuite.h"
 
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:async clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    if (acc_async_sync != acc_async_noval){
-        err = 1;
+    #pragma acc parallel async(acc_async_sync)
+    {
+        // Do some work
+    }
+
+    #pragma acc serial async(acc_async_noval)
+    {
+        // Do some work
+    }
+
+    #pragma acc kernels async(acc_async_sync)
+    {
+        // Do some work
+    }
+
+    #pragma acc data async(acc_async_sync)
+    {
+        // Do some work
+    }
+
+    #pragma acc enterdata async(acc_async_sync)
+    {
+        // Do some work
+    }
+
+    #pragma acc exitdata async(acc_async_sync)
+    {
+        // Do some work
+    }
+
+    #pragma acc update async(acc_async_sync)
+    {
+        // Do some work
+    }
+
+    #pragma acc wait async(acc_async_sync)
+    {
+        // Do some work
     }
 
     return err;

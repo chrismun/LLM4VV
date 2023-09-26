@@ -9,7 +9,7 @@ int test1(){
 
     for (int x = 0; x < n; ++x) {
         a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0.0;
     }
 
     #pragma acc data copy(a[0:n], b[0:n])
@@ -17,13 +17,19 @@ int test1(){
         #pragma acc parallel loop
         for (int x = 0; x < n; ++x) {
             #pragma acc atomic update
-            a[x] += b[x];
+            a[x] += 1.0;
+        }
+
+        #pragma acc parallel loop
+        for (int x = 0; x < n; ++x) {
+            #pragma acc atomic read
+            b[x] = a[x];
         }
     }
 
     for (int x = 0; x < n; ++x) {
-        if (fabs(a[x] - (a_h[x] + b_h[x])) > PRECISION) {
-            err += 1;
+        if (fabs(b[x] - (a[x] - 1.0)) > PRECISION) {
+            err = 1;
         }
     }
 

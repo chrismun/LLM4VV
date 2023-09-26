@@ -1,15 +1,33 @@
 #include "acc_testsuite.h"
-
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:kernels,data,data-region,V:1.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    // Add your OpenACC code to test the declare directive here
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+    }
 
-    if () {
-        err = 1;
+    #pragma acc declare create(a[0:n])
+    #pragma acc data present(a[0:n])
+    {
+        #pragma acc kernels present(a[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
+    }
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
+        }
     }
 
     return err;
@@ -19,7 +37,6 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
-
 #ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
@@ -29,6 +46,5 @@ int main(){
         failcode = failcode + (1 << 0);
     }
 #endif
-
     return failcode;
 }

@@ -4,40 +4,41 @@
 int test1(){
     int err = 0;
     srand(SEED);
-    real_t *a = (real_t *)malloc(n * sizeof(real_t));
-    real_t *b = (real_t *)malloc(n * sizeof(real_t));
-    real_t *c = (real_t *)malloc(n * sizeof(real_t));
-    real_t *d = (real_t *)malloc(n * sizeof(real_t));
-  
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = rand() / (real_t)(RAND_MAX / 10);
-        c[x] = 0.0;
-        d[x] = 0.0;
+
+    // Create a data array
+    int data[10];
+    for (int i = 0; i < 10; i++) {
+        data[i] = rand() % 100;
     }
-  
-    #pragma acc enter data copyin(a[0:n], b[0:n]) create(c[0:n]) deviceptr(c, d)
-    #pragma acc parallel present(a[0:n], b[0:n], c[0:n]) deviceptr(d)
-    {
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            d[x] = a[x] * b[x];
-        }
-        #pragma acc loop
-        for (int x = 0; x < n; ++x){
-            c[x] = a[x] + b[x];
-        }
-    #pragma acc exit data delete(c[0:n], a[0:n], b[0:n]) copyout(d[0:n]) deviceptr(c, d)
-    }
-  
-    for (int x = 0; x < n; ++x){
-        if (fabs(c[x] - (a[x] + b[x])) > (2 * PRECISION)){
-            err += 1;
-        }
-        if (fabs(d[x] - (a[x] * b[x])) > (2 * PRECISION)){
-            err += 1;
+
+    // Create a device array
+    int* dev_data;
+    acc_malloc(dev_data, 10 * sizeof(int));
+
+    // Copy data to device
+    acc_memcpy(dev_data, data, 10 * sizeof(int));
+
+    // Create a host array
+    int* host_data;
+    acc_malloc(host_data, 10 * sizeof(int));
+
+    // Copy data from device to host
+    acc_memcpy(host_data, dev_data, 10 * sizeof(int));
+
+    // Verify that the data was copied correctly
+    for (int i = 0; i < 10; i++) {
+        if (host_data[i] != data[i]) {
+            err = 1;
+            break;
         }
     }
+
+    // Free device memory
+    acc_free(dev_data);
+
+    // Free host memory
+    acc_free(host_data);
+
     return err;
 }
 #endif

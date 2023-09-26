@@ -1,69 +1,49 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "acc_testsuite.h"
 
-#define ACC_DEFAULT_ASYNC_VAR 0
-#define ACC_DEVICE_NUM_VAR 1
-#define ACC_DEVICE_TYPE_VAR 2
+#ifndef T1
+//T1:set directive,V:2.7-3.3
+int test1(){
+    int err = 0;
 
-#define ACC_ASYNC_DEFAULT 0
-#define ACC_ASYNC_SYNC 1
-#define ACC_ASYNC_NONE 2
+    // Set the default asynchronous queue to the initial value
+    #pragma acc set default_async(acc_async_default)
 
-#define ACC_DEVICE_TYPE_CPU 0
-#define ACC_DEVICE_TYPE_GPU 1
-#define ACC_DEVICE_TYPE_ACCELERATOR 2
+    // Set the device number to a valid device number
+    #pragma acc set device_num(1)
 
-#define ACC_DEVICE_NUM_DEFAULT 0
+    // Set the device type to a valid device type
+    #pragma acc set device_type(acc_device_type_gpu)
 
-#define ACC_ERROR_DEVICE_TYPE_UNAVAILABLE 1
-#define ACC_ERROR_DEVICE_UNAVAILABLE 2
-#define ACC_ERROR_INVALID_ASYNC 3
-
-#define ACC_SUCCESS 0
-
-int acc_set_default_async(int async) {
-    if (async == ACC_ASYNC_DEFAULT) {
-        ACC_DEFAULT_ASYNC_VAR = ACC_ASYNC_DEFAULT;
-    } else if (async == ACC_ASYNC_SYNC) {
-        ACC_DEFAULT_ASYNC_VAR = ACC_ASYNC_SYNC;
-    } else if (async == ACC_ASYNC_NONE) {
-        ACC_DEFAULT_ASYNC_VAR = ACC_ASYNC_NONE;
-    } else {
-        return ACC_ERROR_INVALID_ASYNC;
+    // Check that the default asynchronous queue is set to the initial value
+    if (acc_default_async_var != acc_async_default){
+        err = 1;
     }
-    return ACC_SUCCESS;
-}
 
-int acc_set_device_num(int device_num) {
-    if (device_num < 0) {
-        return ACC_ERROR_DEVICE_UNAVAILABLE;
+    // Check that the device number is set to the specified value
+    if (acc_current_device_num_var != 1){
+        err = 1;
     }
-    ACC_DEVICE_NUM_VAR = device_num;
-    return ACC_SUCCESS;
-}
 
-int acc_set_device_type(int device_type) {
-    if (device_type < 0 || device_type > ACC_DEVICE_TYPE_ACCELERATOR) {
-        return ACC_ERROR_DEVICE_TYPE_UNAVAILABLE;
+    // Check that the device type is set to the specified value
+    if (acc_current_device_type_var != acc_device_type_gpu){
+        err = 1;
     }
-    ACC_DEVICE_TYPE_VAR = device_type;
-    return ACC_SUCCESS;
+
+    return err;
 }
+#endif
 
-int main() {
-    int async = ACC_ASYNC_DEFAULT;
-    int device_num = ACC_DEVICE_NUM_DEFAULT;
-    int device_type = ACC_DEVICE_TYPE_CPU;
-
-    // Set default async
-    acc_set_default_async(async);
-
-    // Set device num
-    acc_set_device_num(device_num);
-
-    // Set device type
-    acc_set_device_type(device_type);
-
-    return 0;
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
+    return failcode;
 }

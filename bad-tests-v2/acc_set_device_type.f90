@@ -4,60 +4,25 @@
         USE OPENACC
         IMPLICIT NONE
         INCLUDE "acc_testsuite.Fh"
-	
+        
         INTEGER :: errors = 0
-
-
+        INTEGER :: dev_type
+        
+        ! Set the device type to GPU
+        dev_type = acc_device_gpu
+        CALL acc_set_device_type(dev_type)
+        
+        ! Check that the device type was set correctly
+        IF (acc_current_device_type() .NE. dev_type) THEN
+          errors = errors + 1
+        END IF
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
           test1 = .TRUE.
         END IF
-      CONTAINS
-	COMPUTE_TEST:SUBROUTINE compute_test()
-	  IMPLICIT NONE
-	  REAL(8),DIMENSION(10, 10) :: a, b, c
-	  INTEGER :: errors = 0
-
-	  CALL RANDOM_NUMBER(a)
-	  CALL RANDOM_NUMBER(b)
-	  c = 0
-
-	  !$acc data copyin(a(1:10, 1:10), b(1:10, 1:10)) copy(c(1:10, 1:10))
-    	  !$acc parallel
-	  !$acc loop
-	  DO i = 1, 10
-	    !$acc loop
-	    DO j = 1, 10
-	      c(i, j) = a(i, j) + b(i, j)
-	    END DO
-	  END DO
-	  !$acc end parallel
-	  !$acc end data
-
-	  DO i = 1, 10
-	    DO j = 1, 10
-	      IF (abs(c(i, j) - (a(i, j) + b(i, j))) .gt. PRECISION) THEN
-		error = error + 1
-	      END IF
-	    END DO
-	  END DO
-	 END
-
-#ifndef HOST_DATA_OPENMP
-        COMPILE_OPENMP_HOST_DATA:SUBROUTINE compile_openmp_host_data()
-	  INTEGER :: errors = 0
-	  USE LIBOMP
-        END SUBROUTINE
-       
-#ifndef HOST_DATA_MIC_OPENMP
-	 COMPILE_MIC_OPENMP_HOST_DATA:SUBROUTINE compile_mic_openmp_host_data()
-	  INTEGER :: errors = 0
-          USE LIBMIC
-	 END SUBROUTINE
-#endif
-#endif
-      END SUBROUTINE
+      END
 #endif
 
       PROGRAM main

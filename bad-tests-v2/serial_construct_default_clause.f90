@@ -1,3 +1,4 @@
+fortran
 #ifndef T1
 !T1:serial construct default clause,V:2.7-2.3
       LOGICAL FUNCTION test1()
@@ -6,21 +7,16 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8), DIMENSION(LOOPCOUNT) :: a, b, c
 
         !$acc serial default(present)
-        DO i = 1, LOOPCOUNT
-          a(i) = 3.14
-          b(i) = 2.71
-          c(i) = a(i) * b(i)
-        END DO
-        !$acc end serial
-
-        DO i = 1, LOOPCOUNT
-          IF (ABS(c(i) - 8.214) .gt. PRECISION) THEN
-            errors = errors + 1
-          END IF
-        END DO
+        !$acc parallel
+        !$acc end parallel
+        !$acc serial default(present)
+        !$acc parallel
+        !$acc end parallel
+        !$acc serial default(present)
+        !$acc parallel
+        !$acc end parallel
 
         IF (errors .eq. 0) THEN
           test1 = .FALSE.

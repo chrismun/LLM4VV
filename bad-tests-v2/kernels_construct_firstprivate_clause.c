@@ -1,27 +1,20 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
 //T1:kernels construct firstprivate clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int firstprivate reduction = 0;
+    int a = rand();
+    int b = rand();
+    int c = rand();
 
-    #pragma acc kernels firstprivate(firstprivate)
+    #pragma acc kernels firstprivate(a, b, c)
     {
-        int loop_reduction = 0;
-        for (int x = 0; x < n; ++x){
-            firstprivate = 1.0;
-        }
-        for (int x = 0; x < n; ++x){
-            loop_reduction += data[x];
-        }
-        firstprivate = loop_reduction;
-        for (int x = 0; x < n; ++x){
-            firstprivate[x] -= data[x];
-        }
-        for (int x = 0; x < n; ++x){
-            reduction += data[x];
+        int d = a + b + c;
+        if (d != a + b + c) {
+            err = 1;
         }
     }
 
@@ -34,7 +27,6 @@ int main(){
     int failed;
 #ifndef T1
     failed = 0;
-    int x;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
     }

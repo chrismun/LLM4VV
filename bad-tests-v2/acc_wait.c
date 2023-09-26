@@ -1,39 +1,46 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <acc_testsuite.h>
 
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+#define NUM_TEST_CALLS 10
+#define SEED 12345
+
 int test1(){
     int err = 0;
     srand(SEED);
 
     // Create an async queue
-    acc_async_queue_t queue;
-    acc_async_queue_create(&queue);
+    int async_queue = acc_async_queue_create();
 
-    // Create an async operation
-    acc_async_operation_t operation;
-    acc_async_operation_create(&operation, queue);
+    // Create a device
+    int device = acc_device_create();
 
-    // Wait for the async operation to complete
-    acc_wait(operation);
+    // Create a wait argument
+    int wait_arg = acc_async_wait_create(async_queue, device);
 
-    // Check if the async operation completed successfully
-    if (acc_async_operation_status(operation) != ACC_ASYNC_OPERATION_COMPLETE) {
+    // Wait for the wait argument to complete
+    acc_wait(wait_arg);
+
+    // Check if the wait argument has completed
+    if (acc_async_wait_complete(wait_arg) != 0) {
         err = 1;
     }
 
-    // Clean up the async queue and operation
-    acc_async_queue_destroy(queue);
-    acc_async_operation_destroy(operation);
+    // Clean up
+    acc_async_queue_destroy(async_queue);
+    acc_device_destroy(device);
+    acc_async_wait_destroy(wait_arg);
 
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+
+    // Run the test
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
@@ -41,6 +48,6 @@ int main(){
     if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-#endif
+
     return failcode;
 }

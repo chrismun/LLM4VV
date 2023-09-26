@@ -1,35 +1,49 @@
-#include <openacc.h>
-#include <stdio.h>
+#include "acc_testsuite.h"
+#ifndef T1
+//T1:compute construct reduction clause,V:2.7-3.3
+int test1(){
+    int err = 0;
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-#define N 1000
-#define TOLERANCE 0.0001f
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+    }
 
-int main() {
-    int i;
-    float sum, psum;
-    
-    float a[N];
-    for(i = 0; i < N; i++)
-        a[i] = i + 1;
-    
-    sum = 0.0f;
-
-    #pragma acc data copyin(a) // copy data to device
+    #pragma acc data copy(a[0:n], b[0:n])
     {
-        #pragma acc parallel loop reduction(+:sum) // mark parallel region for reduction
-        for(i = 0; i < N; i++){
-            sum += a[i];
+        #pragma acc parallel loop reduction(+:b[:n])
+        for (int x = 0; x < n; ++x){
+            b[x] += a[x];
         }
     }
 
-    psum = (N * (N + 1)) / 2; // correct result using formula for sum of integers 1 to N
-
-    // print error if not within tolerance
-    if(abs(psum - sum) > TOLERANCE){
-        printf("Test failed! Sum is %.5f, but expected %.5f\n", sum, psum);
-        return -1;
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - (a[x] + x)) > PRECISION){
+            err += 1;
+        }
     }
 
-    printf("Test passed!\n");
-    return 0;
+    free(a);
+    free(b);
+
+    return err;
+}
+#endif
+
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
+    return failcode;
 }

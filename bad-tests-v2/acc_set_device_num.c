@@ -1,60 +1,62 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <openacc.h>
 
-#define NUM_DEVICES 2
-#define NUM_TEST_CALLS 10
+#define NUM_TEST_CALLS 1
+#define SEED 1234
+#define RAND_MAX 1000
+#define PRECISION 0.0001
 
-int main() {
-    int failcode = 0;
-    int failed;
+typedef double real_t;
 
-    // Initialize the OpenACC runtime
-    acc_init(acc_device_default);
+#ifndef T1
+//T1:kernels,data,data-region,V:1.0-2.7
+int test1(){
+    int err = 0;
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    // Set the number of devices to 2
-    acc_set_device_num(NUM_DEVICES);
-
-    // Allocate memory for the device arrays
-    real_t *a = (real_t *)acc_malloc(sizeof(real_t) * NUM_DEVICES);
-    real_t *b = (real_t *)acc_malloc(sizeof(real_t) * NUM_DEVICES);
-
-    // Initialize the device arrays
-    for (int i = 0; i < NUM_DEVICES; i++) {
-        a[i] = i;
-        b[i] = 0;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    // Set the device number to 0
-    acc_set_device_num(0);
+    int device_num = acc_get_device_num(acc_device_nvidia);
+    acc_set_device_num(device_num, acc_device_nvidia);
 
-    // Copy the data from the host to the device
-    acc_memcpy_to_device(a, b, sizeof(real_t) * NUM_DEVICES);
-
-    // Set the device number to 1
-    acc_set_device_num(1);
-
-    // Copy the data from the host to the device
-    acc_memcpy_to_device(a, b, sizeof(real_t) * NUM_DEVICES);
-
-    // Set the device number to 0
-    acc_set_device_num(0);
-
-    // Copy the data from the device to the host
-    acc_memcpy_from_device(a, b, sizeof(real_t) * NUM_DEVICES);
-
-    // Check the results
-    for (int i = 0; i < NUM_DEVICES; i++) {
-        if (a[i] != b[i]) {
-            printf("Error: a[%d] = %f, b[%d] = %f\n", i, a[i], i, b[i]);
-            failcode = 1;
+    #pragma acc data copyin(a[0:n])
+    {
+        #pragma acc kernels copyout(b[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
         }
     }
 
-    // Clean up
-    acc_free(a);
-    acc_free(b);
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
+        }
+    }
 
+    return err;
+}
+#endif
+
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T1
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test1();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 0);
+    }
+#endif
     return failcode;
 }

@@ -1,36 +1,38 @@
-#include <iostream>
-#include <cstdlib>
-#include <cassert>
 #include "acc_testsuite.h"
+
 #ifndef T1
-/*T1:acc memcpy from device,V:2.0-2.7*/
+//T1:acc memcpy from device,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int *host_src = (int *)malloc(n * sizeof(int));
-    int *host_dest = (int *)malloc(n * sizeof(int));
-    int *device_src = (int *)acc_malloc(n * sizeof(int));
+    // Create a device memory region
+    void* dev_mem = acc_malloc(1024);
 
-    for (int x = 0; x < n; ++x){
-        host_src[x] = rand() % n;
-        host_dest[x] = -1;
+    // Create a host memory region
+    void* host_mem = malloc(1024);
+
+    // Initialize the device memory with random data
+    for (int i = 0; i < 1024; i++) {
+        ((char*)dev_mem)[i] = rand() % 256;
     }
 
-    acc_memcpy_to_device(device_src, host_src, n * sizeof(int));
+    // Copy the device memory to the host memory
+    acc_memcpy_from_device(host_mem, dev_mem, 1024);
 
-    acc_memcpy_from_device(host_dest, device_src, n * sizeof(int));
-
-    for (int x = 0; x < n; ++x){
-        if (host_dest[x] != host_src[x]){
+    // Check that the host memory contains the same data as the device memory
+    for (int i = 0; i < 1024; i++) {
+        if (((char*)host_mem)[i] != ((char*)dev_mem)[i]) {
             err = 1;
             break;
         }
     }
 
-    acc_free(device_src);
-    free(host_src);
-    free(host_dest);
+    // Free the device memory
+    acc_free(dev_mem);
+
+    // Free the host memory
+    free(host_mem);
 
     return err;
 }

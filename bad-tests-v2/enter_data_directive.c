@@ -1,24 +1,32 @@
 #include "acc_testsuite.h"
-
-#ifndef T1
-// T1: runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
+#ifndef T2
+//T2:kernels,data,data-region,enter-data,V:2.0-2.7
+int test2(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-    // Add code to test the enter data directive here
-    #pragma acc enter data create(a[0:N])
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+    }
 
-    // Add code to perform data operations here
+    #pragma acc enter data copyin(a[0:n])
+    {
+        #pragma acc kernels present(a, b)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
+    }
+    #pragma acc exit data delete(a)
 
-    // Add code to test the exit data directive here
-    #pragma acc exit data delete(a[0:N])
-
-    // Validate that the data operations were successful
-    for (int i = 0; i < N; ++i){
-        if (a[i] != i){
-            err = 1;
-            break;
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
         }
     }
 
@@ -29,16 +37,14 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
-
-#ifndef T1
+#ifndef T2
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed += test1();
+        failed = failed + test2();
     }
     if (failed != 0){
-        failcode += (1 << 0);
+        failcode = failcode + (1 << 1);
     }
 #endif
-
     return failcode;
 }

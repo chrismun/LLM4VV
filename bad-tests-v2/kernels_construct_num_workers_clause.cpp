@@ -1,34 +1,24 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:kernels construct num_workers clause,V:2.7-3.3
-int test1(){
+#include <iostream>
+#include <cstdlib>
+#include <cmath>
+
+#define NUM_WORKERS 4
+
+int main() {
     int err = 0;
     srand(SEED);
 
-    if (cool_region){ 
-        update_host(&cool_region, 1);
-        for (int x = 0; x < cool_region * n; ++x){
-            if (data[x] == 1){
-                err = 1;
-            }
-        }
+    // Create a kernel with 4 workers
+    #pragma acc kernels num_workers(NUM_WORKERS)
+    {
+        // Do some work here
     }
 
-    return err;
-}
-#endif
+    // Check if the kernel was executed correctly
+    if (err != 0) {
+        std::cerr << "Error: Kernel execution failed" << std::endl;
+        return 1;
+    }
 
-int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
-    }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+    return 0;
 }

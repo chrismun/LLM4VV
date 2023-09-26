@@ -1,32 +1,40 @@
-#include "acc_testsuite.h"
-#ifndef T268
-#define T268
+#include <iostream>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
-int test268(){
+#include "acc_testsuite.h"
+
+#ifndef T1
+//T1:attachment counter,V:2.7-3.3
+int test1(){
     int err = 0;
     srand(SEED);
 
-    int *host_ptr = (int *)malloc(sizeof(int));
-    int *device_ptr = (int *)acc_malloc(sizeof(int));
+    // Create a device pointer
+    int* dev_ptr = (int*)acc_malloc(sizeof(int));
 
-    // Attach host_ptr to device_ptr
-    acc_attach(host_ptr, device_ptr, sizeof(int));
+    // Set the attachment counter to 0
+    acc_attach_counter(dev_ptr, 0);
 
-    // Check if attachment counter is incremented
-    if(acc_get_attach_counter(host_ptr) != 1){
-        err = 1;
-    }
+    // Attach the pointer to a target address
+    int* target_ptr = (int*)acc_malloc(sizeof(int));
+    acc_attach(dev_ptr, target_ptr, sizeof(int));
 
-    // Detach host_ptr from device_ptr
-    acc_detach(host_ptr);
+    // Increment the attachment counter
+    acc_attach_counter(dev_ptr, 1);
 
-    // Check if attachment counter is decremented
-    if(acc_get_attach_counter(host_ptr) != 0){
-        err = 1;
-    }
+    // Detach the pointer from the target address
+    acc_detach(dev_ptr);
 
-    acc_free(device_ptr);
-    free(host_ptr);
+    // Decrement the attachment counter
+    acc_attach_counter(dev_ptr, -1);
+
+    // Check that the attachment counter is 0
+    assert(acc_attach_counter(dev_ptr) == 0);
+
+    // Free the device memory
+    acc_free(dev_ptr);
 
     return err;
 }
@@ -35,10 +43,10 @@ int test268(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T268
+#ifndef T1
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test268();
+        failed = failed + test1();
     }
     if (failed != 0){
         failcode = failcode + (1 << 0);

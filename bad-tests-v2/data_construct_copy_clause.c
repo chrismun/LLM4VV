@@ -1,52 +1,53 @@
+#include <stdlib.h>
+#include <openacc.h>
 #include "acc_testsuite.h"
 
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
+int test1()
+{
     int err = 0;
+    int n = 100;
+    float* a_host = (float*)malloc(n * sizeof(float));
+    float* a_device = (float*)malloc(n * sizeof(float));
+  
     srand(SEED);
+    for (int i = 0; i < n; ++i)
+        a_host[i] = rand();
 
-    // Create a data array
-    int data[10];
-    for (int i = 0; i < 10; i++) {
-        data[i] = rand();
+    #pragma acc data copy(a_device[0:n])
+    {
+        #pragma acc parallel loop
+        for (int i = 0; i < n; ++i)
+            a_device[i] = a_host[i] + 1.0;
     }
 
-    // Copy the data array to the device
-    #pragma acc enter data copyin(data[:10])
-
-    // Modify the data array on the device
-    #pragma acc parallel loop
-    for (int i = 0; i < 10; i++) {
-        data[i] += 1;
-    }
-
-    // Copy the modified data array back to the host
-    #pragma acc exit data copyout(data[:10])
-
-    // Check that the data array has been modified correctly
-    for (int i = 0; i < 10; i++) {
-        if (data[i] != rand() + 1) {
+    for (int i = 0; i < n; ++i)
+        if (a_device[i] != a_host[i] + 1.0)
             err = 1;
-            break;
-        }
-    }
-
+  
+    free(a_host);
+    free(a_device);
+  
     return err;
 }
 #endif
 
-int main(){
+int main()
+{
     int failcode = 0;
     int failed;
+        
 #ifndef T1
     failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+    for(int x = 0; x < NUM_TEST_CALLS; ++x)
+    {
         failed = failed + test1();
     }
-    if (failed != 0){
+    if (failed != 0)
+    {
         failcode = failcode + (1 << 0);
     }
 #endif
+    
     return failcode;
 }

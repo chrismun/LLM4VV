@@ -1,17 +1,63 @@
 #include "acc_testsuite.h"
-
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:wait clause,V:2.7-3.3
 int test1(){
     int err = 0;
-    srand(SEED);
+    int *a, *b, *c, *d, *e;
+    int n = 1024;
+    a = (int *)malloc(n * sizeof(int));
+    b = (int *)malloc(n * sizeof(int));
+    c = (int *)malloc(n * sizeof(int));
+    d = (int *)malloc(n * sizeof(int));
+    e = (int *)malloc(n * sizeof(int));
 
-    // Add OpenACC `wait` clause
-    #pragma acc parallel num_workers(4) wait(4) // Adjust the number of workers as needed
-    {
-        int tid = acc_get_worker_num();
-        printf("Hello from thread %d\n", tid);
+    for (int x = 0; x < n; ++x){
+        a[x] = 1;
+        b[x] = 2;
+        c[x] = 3;
+        d[x] = 4;
+        e[x] = 5;
     }
+
+    #pragma acc data copy(a[0:n], b[0:n], c[0:n], d[0:n], e[0:n])
+    {
+        #pragma acc parallel present(a[0:n], b[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                a[x] += b[x];
+            }
+        }
+
+        #pragma acc kernels present(c[0:n], d[0:n]) wait(1)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                c[x] += d[x];
+            }
+        }
+
+        #pragma acc serial present(e[0:n]) wait(1)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                e[x] += 1;
+            }
+        }
+    }
+
+    for (int x = 0; x < n; ++x){
+        if (a[x] != 3 || c[x] != 9 || e[x] != 6){
+            err = 1;
+            break;
+        }
+    }
+
+    free(a);
+    free(b);
+    free(c);
+    free(d);
+    free(e);
 
     return err;
 }

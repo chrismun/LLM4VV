@@ -1,3 +1,5 @@
+#include <openacc.h>
+
 #ifndef T1
 !T1:acc on device,V:2.7-2.3
       LOGICAL FUNCTION test1()
@@ -6,15 +8,19 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        INTEGER(acc_device_kind) :: dev_type
 
-        dev_type = acc_device_host
-        IF (.NOT. acc_on_device(dev_type)) THEN
+        ! Check if the code is running on the host
+        IF (acc_on_device(acc_device_host) .EQV. .TRUE.) THEN
           errors = errors + 1
         END IF
 
-        dev_type = acc_device_not_host
-        IF (acc_on_device(dev_type)) THEN
+        ! Check if the code is running on a device that is not the host
+        IF (acc_on_device(acc_device_not_host) .EQV. .FALSE.) THEN
+          errors = errors + 1
+        END IF
+
+        ! Check if the code is running on a specific device
+        IF (acc_on_device(acc_device_type_nvidia) .EQV. .TRUE.) THEN
           errors = errors + 1
         END IF
 
@@ -23,7 +29,7 @@
         ELSE
           test1 = .TRUE.
         END IF
-      END FUNCTION test1
+      END
 #endif
 
       PROGRAM main

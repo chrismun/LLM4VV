@@ -1,38 +1,36 @@
 #include "acc_testsuite.h"
-#ifndef T1
-//T1:serial construct firstprivate clause,V:2.7-3.3
-int test1(){
+
+int test_firstprivate(){
     int err = 0;
-    srand(SEED);
+    int a = 5;
+    int a_host = a; 
 
-    int iData = 1;
-
-    #pragma acc data copy(iData)
+    #pragma acc serial firstprivate(a) 
     {
-        #pragma acc serial firstprivate(iData)
-        {
-            iData += 1;
-        }
-        if (iData != 2){
-            err += 1;
-        }
+        a += 5;
+    }
+
+    /* Check if value of a is different on host and device */
+    if (a != (a_host + 5)){
+        err = 1;
     }
 
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
+    int failed = 0;
+    
+    /* Run the test NUM_TEST_CALLS times */
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+        failed += test_firstprivate();
     }
+    
+    /* Check if any of the runs failed */
     if (failed != 0){
-        failcode = failcode + (1 << 0);
+        failcode = (1 << 0);
     }
-#endif
+
     return failcode;
 }

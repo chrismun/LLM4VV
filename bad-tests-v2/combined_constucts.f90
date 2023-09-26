@@ -7,6 +7,11 @@
         
         INTEGER :: errors = 0
 
+        !$acc parallel loop reduction(+:errors)
+        DO i = 1, 10
+          errors = errors + 1
+        END DO
+        !$acc end parallel loop
 
         IF (errors .eq. 0) THEN
           test1 = .FALSE.

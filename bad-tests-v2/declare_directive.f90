@@ -6,22 +6,11 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        INTEGER :: a, b, c
-
-        !$acc declare create(a, b, c)
-
-        a = 1
-        b = 2
-        c = 3
-
-        !$acc parallel
-        c = a + b
-        !$acc end parallel
-
-        IF (c .NE. 3) THEN
-          errors = errors + 1
-        END IF
-
+        INTEGER :: var
+        INTEGER :: device_resident
+        
+        !$acc declare device_resident(var)
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE

@@ -1,48 +1,60 @@
-#include "acc_testsuite.h"
-
 #ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
+//T1:async,compute,data,if,construct-independent-tiling,V:2.0-2.7
 int test1(){
     int err = 0;
     srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+    real_t * c = (real_t *)malloc(n * sizeof(real_t));
+    real_t * a_copy = (real_t *)malloc(n * sizeof(real_t));
 
-    // Create a data array
-    int data[100];
-    for (int i = 0; i < 100; i++) {
-        data[i] = i;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = rand() / (real_t)(RAND_MAX / 10);
+        c[x] = 0;
     }
 
-    // Create a device array
-    int device_data[100];
-    for (int i = 0; i < 100; i++) {
-        device_data[i] = i;
+    #pragma acc enter data copyin(a[0:n])
+    #pragma acc enter data copyin(b[0:n])
+    #pragma acc enter data create(c[0:n])
+
+    for (int x = 0; x < n; ++x){
+        a_copy[x] = a[x];
     }
 
-    // Create a host array
-    int host_data[100];
-    for (int i = 0; i < 100; i++) {
-        host_data[i] = i;
-    }
-
-    // Create a compute construct with the async clause
-    #pragma acc compute async(device_data)
+    #pragma acc update device(a[0:n])
+    #pragma acc data present(a[0:n], b[0:n], c[0:n])
     {
-        // Perform some computation on the device data
-        for (int i = 0; i < 100; i++) {
-            device_data[i] += 1;
-        }
+        #pragma acc compute async(1)
+            #pragma acc loop independent
+            for (int x = 0; x < n; ++x){
+                a[x] = a[x] * a[x];
+            }
+        #pragma acc compute async(2)
+            #pragma acc loop independent
+            for (int x = 0; x < n; ++x){
+                b[x] = b[x] * b[x];
+            }
+        #pragma acc compute async(1) wait(2)
+            #pragma acc loop independent
+            for (int x = 0; x < n; ++x){
+                c[x] = a[x] + b[x];
+            }
     }
-
-    // Wait for the computation to complete
     #pragma acc wait
-
-    // Check the results
-    for (int i = 0; i < 100; i++) {
-        if (device_data[i] != host_data[i] + 1) {
-            err = 1;
-            break;
+    for (int x = 0; x < n; ++x){
+        if (fabs(a[x] - (a_copy[x] * a_copy[x])) > PRECISION){
+            err += 1;
+        }
+        if (fabs(b[x] - (a_copy[x] * a_copy[x])) > PRECISION){
+            err += 1;
+        }
+        if (fabs(c[x] - (a[x] + b[x])) > PRECISION){
+            err += 1;
         }
     }
+
+    #pragma acc exit data copyout(a[0:n], b[0:n], c[0:n])
 
     return err;
 }

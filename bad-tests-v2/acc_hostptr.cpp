@@ -1,67 +1,29 @@
+#include <iostream>
+#include <cstdlib>
 #include "acc_testsuite.h"
 #ifndef T1
-//T1:acc hostptr,V:2.7-3.3
+/*T1:acc hostptr,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
 
-    if(acc_get_device_type() == acc_device_none){
-        real_t *a = (real_t *)malloc(n * sizeof(real_t));
-        real_t *a_copy = (real_t *)malloc(n * sizeof(real_t));
-        int deviceon = 0;
+    int *host_data = (int *)malloc(n * sizeof(int));
+    int *device_data = (int *)acc_malloc(n * sizeof(int));
 
-        for (int x = 0; x < n; ++x){
-            a[x] = rand() / (real_t)(RAND_MAX / 10);
-            a_copy[x] = a[x];
-        }
-
-        #pragma acc enter data copyin(a[0:n])
-        for (int x = 0; x < n; ++x){
-            acc_hostptr((void *)&a[x]) = acc_deviceptr((void *)&a[x]);
-        }
-        #pragma acc parallel present(a[0:n])
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                *((real_t *) acc_hostptr((void *)&a[x]))) = *((real_t *) acc_hostptr((void *)&a[x]))) + 1;
-            }
-        }
-        #pragma acc exit data copyout(a[0:n])
-
-        for (int x = 0; x < n; ++x){
-            if (fabs(a[x] - (a_copy[x] + 1)) > PRECISION){
-                err += 1;
-            }
-        }
-
-        for (int x = 0; x < n; ++x){
-            a[x] = rand() / (real_t)(RAND_MAX / 10);
-        }
-
-        for (int x = 0; x < n; ++x){
-            a_copy[x] = a[x];
-        }
-
-        #pragma acc enter data copyin(a[0:n])
-        for (int x = 0; x < n; ++x){
-            acc_hostptr((void *)&a[x]) = acc_deviceptr((void *)&a[x]);
-        }
-        #pragma acc parallel present(a[0:n])
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                *((real_t *) acc_hostptr((void *)&a[x]))) = *((real_t *) acc_hostptr((void *)&a[x]))) + 1;
-            }
-        }
-        #pragma acc exit data copyout(a[0:n])
-
-        for (int x = 0; x < n; ++x){
-            if (fabs(a[x] - (a_copy[x] + 1)) > PRECISION){
-                err += 1;
-            }
-        }
-
+    for (int x = 0; x < n; ++x){
+        host_data[x] = rand() % n;
     }
+
+    acc_memcpy_to_device(device_data, host_data, n * sizeof(int));
+
+    int *host_ptr = (int *)acc_hostptr(device_data);
+
+    if (host_ptr != host_data){
+        err = 1;
+    }
+
+    acc_free(device_data);
+    free(host_data);
 
     return err;
 }

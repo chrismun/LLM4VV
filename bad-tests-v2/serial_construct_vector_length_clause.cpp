@@ -1,57 +1,54 @@
-#include "acc_testsuite.h"
-#include <openacc.h>
+#include <iostream>
+#include <cstdlib>
+#include <cmath>
 
-#define N 1024
-#define VECTOR_LENGTH 32
+#define SEED 12345
+#define NUM_TEST_CALLS 100
 
-#ifndef T1
-/*T1:serial construct vector_length clause,V:2.0-2.7*/
-int test1(){
+int test1() {
     int err = 0;
     srand(SEED);
 
-    // Initialize host array
-    float* array_host = new float[N];
-    for(int i=0;i<N;i++){
-        array_host[i] = rand() % 100;
-    }
+    // Generate a random vector length
+    int vector_length = rand() % 10 + 1;
 
-    // Compute on device
-    float* array_device = new float[N];
-    #pragma acc data copyin(array_host[0:N]) copy(array_device[0:N])
+    // Create a serial construct with the vector_length clause
+    #pragma acc serial vector_length(vector_length)
     {
-        #pragma acc serial vector_length(VECTOR_LENGTH)
-        for(int i=0; i<N; i++){
-           array_device[i] = array_host[i];
+        // Perform some vector operations
+        float a[vector_length];
+        float b[vector_length];
+        for (int i = 0; i < vector_length; i++) {
+            a[i] = i;
+            b[i] = i * 2;
+        }
+        for (int i = 0; i < vector_length; i++) {
+            a[i] += b[i];
         }
     }
 
-    // Compare host and device result
-    for(int i=0;i<N;i++){
-        if(array_host[i] != array_device[i]){
+    // Check the results
+    for (int i = 0; i < vector_length; i++) {
+        if (a[i] != i * 3) {
             err = 1;
             break;
         }
     }
 
-    delete[] array_host;
-    delete[] array_device;
-
     return err;
 }
-#endif
 
-int main(){
+int main() {
     int failcode = 0;
     int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+
+    // Run the test multiple times
+    for (int x = 0; x < NUM_TEST_CALLS; x++) {
+        failed = test1();
+        if (failed != 0) {
+            failcode = failcode + (1 << x);
+        }
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
-    }
-#endif
+
     return failcode;
 }

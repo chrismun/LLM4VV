@@ -1,35 +1,35 @@
 #include "acc_testsuite.h"
 #ifndef T1
-//T1:serial construct wait clause,V:2.7-3.3
+/*T1:serial construct,wait clause,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
-    int * a = (int *)malloc(n * sizeof(int));
-    int * b = (int *)malloc(n * sizeof(int));
-
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0;
+    int length = 100;
+    float * a = (float *)malloc(length * sizeof(float));
+    float * b = (float *)malloc(length * sizeof(float));
+    float * c = (float *)malloc(length * sizeof(float));
+    int i;
+    for (i=0; i<length; i++){
+        a[i] = rand()/(float)RAND_MAX;
+        b[i] = rand()/(float)RAND_MAX;
+        c[i] = 0.0;
     }
-
-    #pragma acc data copyin(a[0:n]) copyout(b[0:n])
-    {
-        #pragma acc serial loop
-        for (int x = 0; x < n; ++x){
-            b[x] = a[x];
-        }
-        #pragma acc serial loop vector(4) wait(0)
-        for (int x = 1; x < n; ++x){
-            b[x] = b[x] + b[x-1];
-        }
+    
+    #pragma acc data copyin(a[0:length], b[0:length]) copyout(c[0:length]) async(1)
+    #pragma acc serial present(a[0:length], b[0:length], c[0:length])
+    for (i=0; i<length; i++){
+        c[i] = a[i] + b[i];
     }
-
-    for (int x = 0; x < n; ++x){
-        if (b[x] > (x + 1) * 10){
-            err += 1;
+    #pragma acc wait(1)
+    for (i=0; i<length; i++){
+        if (fabs(c[i] - a[i] - b[i]) > PRECISION){
+            err = 1;
         }
     }
 
+    free(a);
+    free(b);
+    free(c);
     return err;
 }
 #endif

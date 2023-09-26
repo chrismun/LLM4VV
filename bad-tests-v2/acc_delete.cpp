@@ -1,44 +1,66 @@
-#include "acc_testsuite.h"
-#include <iostream>
-#include <cstdlib>
-#include <cassert>
-#include <cstring>
+c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <acc_testsuite.h>
 
-using namespace std;
+#define NUM_TEST_CALLS 10
 
-#ifndef T1
-/*T1:acc delete,V:2.0-2.7*/
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int *a = (int *)malloc(n * sizeof(int));
-    int *devPtr = (int *)acc_malloc(n * sizeof(int));
-
-    for (int x = 0; x < n; ++x) {
-        a[x] = rand() % n;
-        devPtr[x] = 0;
+    // Scenario 1: The data section is in shared memory, and the dynamic reference counter is zero.
+    int *data = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
     }
-
-    acc_memcpy_to_device(devPtr, a, n * sizeof(int));
-
-    acc_delete(devPtr, n * sizeof(int));
-
-    if (devPtr != nullptr) {
-        cout << "acc_delete failed to deallocate device memory." << endl;
+    acc_copyout(data, sizeof(int) * 10);
+    acc_delete(data, sizeof(int) * 10);
+    if (data[0] != 0) {
         err = 1;
     }
 
-    free(a);
+    // Scenario 2: The data section is not in shared memory, and the dynamic reference counter is zero.
+    data = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
+    }
+    acc_copyout(data, sizeof(int) * 10);
+    acc_delete(data, sizeof(int) * 10);
+    if (data[0] != 0) {
+        err = 1;
+    }
+
+    // Scenario 3: The data section is in shared memory, and the dynamic reference counter is non-zero.
+    data = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
+    }
+    acc_copyout(data, sizeof(int) * 10);
+    acc_delete(data, sizeof(int) * 10);
+    if (data[0] != 0) {
+        err = 1;
+    }
+
+    // Scenario 4: The data section is not in shared memory, and the dynamic reference counter is non-zero.
+    data = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
+    }
+    acc_copyout(data, sizeof(int) * 10);
+    acc_delete(data, sizeof(int) * 10);
+    if (data[0] != 0) {
+        err = 1;
+    }
 
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
@@ -46,6 +68,6 @@ int main(){
     if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-#endif
+
     return failcode;
 }

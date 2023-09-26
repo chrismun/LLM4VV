@@ -1,39 +1,40 @@
 #include "acc_testsuite.h"
-#include <iostream>
-#include <cstdlib>
-#include <cassert>
-#include <cstring>
+#include <openacc.h>
 
-#ifndef T1
-/*T1:acc free,V:2.0-2.7*/
-int test1(){
+int test_acc_free(){
     int err = 0;
-    srand(SEED);
 
-    int *data_dev;
-    size_t size = 10 * sizeof(int);
-    data_dev = (int *)acc_malloc(size);
-    assert(data_dev != NULL);
+    size_t size = 100;
+    void *dev_ptr;
 
-    if(acc_free(data_dev) != 0){
-        err = 1;
+    #pragma acc data create(size)
+    {
+        dev_ptr = acc_malloc(size*sizeof(size_t));
     }
 
+    acc_free(dev_ptr);
+    
+    #pragma acc data present(size)
+    {
+        size_t* check_ptr = (size_t *) dev_ptr;
+        if (check_ptr != NULL){
+           err = 1;
+        }
+    }
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
+    int failed = 0;
+
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+        failed = failed + test_acc_free();
     }
+
     if (failed != 0){
-        failcode = failcode + (1 << 0);
+        failcode = failcode + 1;
     }
-#endif
+
     return failcode;
 }

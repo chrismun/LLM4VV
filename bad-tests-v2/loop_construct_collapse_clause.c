@@ -1,26 +1,30 @@
 #include "acc_testsuite.h"
-#ifndef T1
-//T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1(){
+#ifndef T2
+//T2:kernels,data,data-region,loop-collapse,V:2.0-2.7
+int test2(){
     int err = 0;
-    int i, j, k;
-    int arr[N][M];
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * m * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * m * sizeof(real_t));
 
-    // Initialize array
-    for (i = 0; i < N; i++){
-        for (j = 0; j < M; j++){
-            arr[i][j] = i + j;
+    for (int x = 0; x < n * m; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
+    }
+
+    #pragma acc data copyin(a[0:n*m])
+    {
+        #pragma acc kernels loop collapse(2) copyout(b[0:n*m])
+        for (int x = 0; x < n; ++x){
+            for (int y = 0; y < m; ++y){
+                b[x * m + y] = a[x * m + y];
+            }
         }
     }
 
-    // Parallelize with collapse clause
-    #pragma acc parallel loop collapse(2)
-    for (i = 0; i < N; i++){
-        for (j = 0; j < M; j++){
-            // Check if each element is correctly calculated
-            if (arr[i][j] != i + j){
-                err = 1;
-            }
+    for (int x = 0; x < n * m; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
         }
     }
 
@@ -31,13 +35,13 @@ int test1(){
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+#ifndef T2
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+        failed = failed + test2();
     }
     if (failed != 0){
-        failcode = failcode + (1 << 0);
+        failcode = failcode + (1 << 1);
     }
 #endif
     return failcode;

@@ -5,36 +5,14 @@ int test1(){
     int err = 0;
     srand(SEED);
 
-    acc_init(acc_device_nvidia);
-
-    real_t *host_ptr = new real_t[n];
-    real_t *a = new real_t[n];
-    real_t *b = new real_t[n];
-
-    for (int x = 0; x < n; ++x){
-        a[x] = 0;
-        b[x] = 1;
-    }
-
-    #pragma acc data copy(a[0:n]) create(host_ptr[0:n])
+    #pragma acc parallel num_gangs(1) num_workers(1) wait(1)
     {
-            #pragma acc parallel
-            {
-                #pragma acc loop
-                for (int x = 0; x < n; ++x){
-                    a[x] = b[x] * b[x];
-                }
-                #pragma acc loop wait
-                for (int x = 0; x < n; ++x){
-                    host_ptr[x] = a[x];
-                }
-            }
+        // Do some work
     }
 
-    for (int x = 0; x < n; ++x){
-        if (fabs(host_ptr[x] - (b[x] * b[x] + PRECISION)) > 0){
-            err += 1;
-        }
+    if (acc_get_num_gangs(acc_get_device_type()) != 1 ||
+        acc_get_num_workers(acc_get_device_type()) != 1) {
+        err = 1;
     }
 
     return err;

@@ -1,30 +1,37 @@
-#include "acc_testsuite.h"
-#ifndef T1
-//T1:acc shutdown,V:2.7-3.3
-int test1(){
-    int err = 0;
-    srand(SEED);
-
-    if(){
-
-        err = 1;
-    }
-
-    return err;
-}
-#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
 int main(){
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x){
-        failed = failed + test1();
+    int n = 1000;
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
+
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
-    if (failed != 0){
-        failcode = failcode + (1 << 0);
+
+    #pragma acc data copyin(a[0:n])
+    {
+        #pragma acc kernels copyout(b[0:n])
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
     }
-#endif
-    return failcode;
+
+    acc_shutdown(acc_device_nvidia);
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            printf("Validation failed at index %d\n", x);
+            return 1;
+        }
+    }
+
+    printf("Validation passed\n");
+    return 0;
 }

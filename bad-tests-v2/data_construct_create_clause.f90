@@ -1,3 +1,4 @@
+fortran
 #ifndef T1
 !T1:data construct create clause,V:2.7-2.3
       LOGICAL FUNCTION test1()
@@ -6,47 +7,115 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        REAL(8),DIMENSION(LOOPCOUNT):: a, b, c, d
-        REAL(8),DIMENSION(8*LOOPCOUNT):: x_base
-        REAL(8),DIMENSION(8, LOOPCOUNT):: x
-        INTEGER:: x_u
-        INTEGER,DIMENSION(1):: devtest
-
-        CALL RANDOM_SEED()
-        CALL RANDOM_NUMBER(a)
-        CALL RANDOM_NUMBER(b)
-        CALL RANDOM_NUMBER(c)
-        d = 0
-        DO i=1, 8*LOOPCOUNT
-          d(i) = -1
-        DO i = 1, LOOPCOUNT
-          x_base(1) = 0
-          x_base(LOOPCOUNT) = 1
-          DO j = 2, 2**NVIDIA_BITS
-            x_base(j*LOOPCOUNT) = x_base(j*LOOPCOUNT-LOOPCOUNT) + 1
-          END DO
+        INTEGER :: var1, var2
+        INTEGER :: create_clause
+        INTEGER :: attach_clause
+        INTEGER :: detach_clause
+        INTEGER :: delete_clause
+        INTEGER :: present_or_create_clause
+        INTEGER :: pcreate_clause
+        INTEGER :: enterdata_directive
+        INTEGER :: exit_directive
+        INTEGER :: structured_reference_counter
+        INTEGER :: dynamic_reference_counter
+        INTEGER :: zero_modifier
         
-        x_u = 0
-        !$acc enter data copyin(x(1:8, 1:LOOPCOUNT), x_u)
-        !$acc data copyout(d(1:LOOPCOUNT))
-          !$acc parallel present_or_create(x(1:8, 1:LOOPCOUNT)) create(x_u)
-          !$acc loop
-          DO i = 1, LOOPCOUNT
-            !$acc loop vector
-            DO j = 1, 8
-              x(j, i) = a(i) + b(i) + c(i)
-            END DO
-            IF (abs(x_base(x_u+1) - x(i)) < PRECISION) THEN
-              errors = errors + 1
-            END IF
-            x_base(x_u+1) = x_base(x_u+1) + 1
-            CALL acc_update_device(x_u(1), x_u(1:1))
-          END DO
-          !$acc end parallel
-          !$acc end data
+        ! Initialize variables
+        var1 = 0
+        var2 = 0
+        create_clause = 0
+        attach_clause = 0
+        detach_clause = 0
+        delete_clause = 0
+        present_or_create_clause = 0
+        pcreate_clause = 0
+        enterdata_directive = 0
+        exit_directive = 0
+        structured_reference_counter = 0
+        dynamic_reference_counter = 0
+        zero_modifier = 0
+        
+        ! Test create clause
+        IF (var1 .EQ. 0) THEN
+          ! If var1 is not in shared memory, create clause should be performed
+          create_clause = 1
+          ! If var1 is a null pointer, attach clause should be performed
+          attach_clause = 1
+          ! If var1 is not a null pointer, present increment action should be performed
+          present_or_create_clause = 1
+          ! If var1 is a pointer reference, detach clause should be performed
+          detach_clause = 1
+          ! If var1 is not a null pointer, present decrement action should be performed
+          present_or_create_clause = 1
+          ! If var1 is not a null pointer, delete action should be performed
+          delete_clause = 1
+        END IF
+        
+        ! Test enterdata directive
+        IF (var2 .EQ. 0) THEN
+          ! If var2 is not in shared memory, create clause should be performed
+          create_clause = 1
+          ! If var2 is a null pointer, attach clause should be performed
+          attach_clause = 1
+          ! If var2 is not a null pointer, present increment action should be performed
+          present_or_create_clause = 1
+          ! If var2 is a pointer reference, detach clause should be performed
+          detach_clause = 1
+          ! If var2 is not a null pointer, present decrement action should be performed
+          present_or_create_clause = 1
+          ! If var2 is not a null pointer, delete action should be performed
+          delete_clause = 1
+        END IF
+        
+        ! Test exit directive
+        IF (structured_reference_counter .EQ. 0) THEN
+          ! If structured reference counter is zero, no action should be taken
+          ! If structured reference counter is not zero, detach action should be performed
+          detach_clause = 1
+          ! If dynamic reference counter is zero, no action should be taken
+          ! If dynamic reference counter is not zero, present decrement action should be performed
+          present_or_create_clause = 1
+          ! If both structured and dynamic reference counters are zero, delete action should be performed
+          delete_clause = 1
+        END IF
+        
+        ! Test zero modifier
+        IF (zero_modifier .EQ. 1) THEN
+          ! If zero modifier is present, memory should be zeroed after create action
+          ! If zero modifier is not present, memory should not be zeroed after create action
+          create_clause = 1
+        END IF
+        
+        ! Test errors
+        IF (errors .EQ. 0) THEN
+          ! If no errors, test should pass
+          test1 = .FALSE.
+        ELSE
+          ! If errors, test should fail
+          test1 = .TRUE.
+        END IF
+        
+      END FUNCTION test1
+#endif
+      
+      PROGRAM main
+        IMPLICIT NONE
+        INTEGER :: failcode, testrun
+        LOGICAL :: failed
+        INCLUDE "acc_testsuite.Fh"
+#ifndef T1
+        LOGICAL :: test1
+#endif
+        failed = .FALSE.
+        failcode = 0
+#ifndef T1
+        DO testrun = 1, NUM_TEST_CALLS
+          failed = failed .or. test1()
         END DO
-        DO i = 1, LOOPCOUNT
-          IF (abs(x(i)-d(i)) .gt. PRECISION) THEN
-            errors = errors + 1
-          END IF
-        END DO
+        IF (failed) THEN
+          failcode = failcode + 2 ** 0
+          failed = .FALSE.
+        END IF
+#endif
+        CALL EXIT (failcode)
+      END PROGRAM

@@ -6,45 +6,25 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        INTEGER, DIMENSION(10) :: data
-        LOGICAL :: acc_is_present_result
-
-        ! Initialize data
-        data = 1
-
-        ! Test acc_is_present
-        acc_is_present_result = acc_is_present(data, 40)
-
-        IF (.NOT. acc_is_present_result) THEN
+        REAL, DIMENSION(10) :: a
+        LOGICAL :: is_present
+        
+        ! Initialize the array
+        a = 1.0
+        
+        ! Test if the array is present in the current device memory
+        is_present = acc_is_present(a)
+        
+        ! Check if the array is present
+        IF (is_present) THEN
           errors = errors + 1
         END IF
-
+        
+        ! Check if there were any errors
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
           test1 = .TRUE.
         END IF
-      END FUNCTION
+      END
 #endif
-
-      PROGRAM main
-        IMPLICIT NONE
-        INTEGER :: failcode, testrun
-        LOGICAL :: failed
-        INCLUDE "acc_testsuite.Fh"
-#ifndef T1
-        LOGICAL :: test1
-#endif
-        failed = .FALSE.
-        failcode = 0
-#ifndef T1
-        DO testrun = 1, NUM_TEST_CALLS
-          failed = failed .or. test1()
-        END DO
-        IF (failed) THEN
-          failcode = failcode + 2 ** 0
-          failed = .FALSE.
-        END IF
-#endif
-        CALL EXIT (failcode)
-      END PROGRAM

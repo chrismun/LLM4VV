@@ -1,17 +1,50 @@
-#include <openacc.h>
+#include "acc_testsuite.h"
+#ifndef T2
+//T2:kernels,async,default-async,V:2.0-2.7
+int test2(){
+    int err = 0;
+    srand(SEED);
+    real_t * a = (real_t *)malloc(n * sizeof(real_t));
+    real_t * b = (real_t *)malloc(n * sizeof(real_t));
 
-void acc_set_default_async(int async_arg) {
-    acc_async_var_t async_var;
-    int async_arg_val;
-
-    // Check if the async_arg is a valid async-argument value
-    if (async_arg < 0 || async_arg > ACC_ASYNC_MAX) {
-        acc_error_invalid_async(async_arg);
-        return;
+    for (int x = 0; x < n; ++x){
+        a[x] = rand() / (real_t)(RAND_MAX / 10);
+        b[x] = 0;
     }
 
-    // Set the default asynchronous activity queue to the specified queue
-    async_var = acc_async_var_create(async_arg);
-    async_arg_val = acc_async_var_get(async_var);
-    acc_set_default_async_var(async_arg_val);
+    #pragma acc set default_async(1)
+    #pragma acc data copyin(a[0:n])
+    {
+        #pragma acc kernels copyout(b[0:n]) async(1)
+        {
+            #pragma acc loop
+            for (int x = 0; x < n; ++x){
+                b[x] = a[x];
+            }
+        }
+    }
+
+    for (int x = 0; x < n; ++x){
+        if (fabs(b[x] - a[x]) > PRECISION){
+            err += 1;
+        }
+    }
+
+    return err;
+}
+#endif
+
+int main(){
+    int failcode = 0;
+    int failed;
+#ifndef T2
+    failed = 0;
+    for (int x = 0; x < NUM_TEST_CALLS; ++x){
+        failed = failed + test2();
+    }
+    if (failed != 0){
+        failcode = failcode + (1 << 1);
+    }
+#endif
+    return failcode;
 }

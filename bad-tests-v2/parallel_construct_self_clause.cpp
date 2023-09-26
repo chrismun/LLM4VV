@@ -1,11 +1,13 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
 //T1:parallel construct self clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    if(){
+    #pragma acc parallel self(err)
+    {
         err = 1;
     }
 

@@ -1,42 +1,35 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <acc/acc.h>
-
-#define NUM_TEST_CALLS 10
-#define PRECISION 0.00001
-
+#include "acc_testsuite.h"
+#ifndef T1
+//T1:update directive,V:2.7-3.3
 int test1(){
     int err = 0;
+    int length = 100;
+    int data_host[length];
+    int data_device[length];
+    
+    // Fill data_host with some values
+    for (int idx = 0; idx < length; ++idx) {
+        data_host[idx] = idx;
+    }
+    
     srand(SEED);
-    real_t * a = (real_t *)malloc(n * sizeof(real_t));
-    real_t * b = (real_t *)malloc(n * sizeof(real_t));
-
-    for (int x = 0; x < n; ++x){
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = 0;
-    }
-
-    #pragma acc data copyin(a[0:n])
+    #pragma acc parallel copy(data_device)
     {
-        #pragma acc kernels update(b[0:n])
-        {
-            #pragma acc loop
-            for (int x = 0; x < n; ++x){
-                b[x] = a[x];
-            }
+        for(int idx = 0; idx < length; ++idx){
+            data_device[idx] = data_host[idx];
         }
     }
-
-    for (int x = 0; x < n; ++x){
-        if (fabs(b[x] - a[x]) > PRECISION){
-            err += 1;
-        }
+    #pragma acc update host(data_device)
+    for(int idx = 0; idx < length; ++idx){
+      if(data_host[idx] != data_device[idx]){
+        err = 1;
+        break;
+      }
     }
 
     return err;
 }
+#endif
 
 int main(){
     int failcode = 0;

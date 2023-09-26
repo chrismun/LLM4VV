@@ -1,64 +1,50 @@
-#include "acc_testsuite.h"
-#ifndef T1
-// T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1()
-{
-    int err = 0;
-    srand(SEED);
+#include <openacc.h>
+#include <stdlib.h>
 
-    int *arr = (int *)malloc(N * sizeof(int));
-    int *arr_copy = (int *)malloc(N * sizeof(int));
+int main() {
 
-    // Initialize the array
-    for (int i = 0; i < N; ++i)
-    {
-        arr[i] = rand() % 100;
+    int N = 100;
+    /* Host Memory Allocation */
+    float * h_a = malloc(N*sizeof(float));
+    float * h_b = malloc(N*sizeof(float));
+
+    /* Initialize host memory */
+    for(int i=0; i<N; i++) {
+        h_a[i] = i;
     }
 
-    // Copy the array to the GPU memory
-    #pragma acc enter data copyin(arr[0:N])
-    
-    // Perform some operations on the GPU
-    #pragma acc parallel loop
-    for (int i = 0; i < N; ++i)
+    /* Device Memory Allocation and Copyin */
+    #pragma acc data create(h_b[0:N])
     {
-        arr[i] *= 2;
-    }
+        /* Copy data from Host to Device */
+        #pragma acc enter data copyin(h_a[0:N])
 
-    // Copy the array back to the CPU memory
-    #pragma acc exit data copyout(arr_copy[0:N])
-
-    // Verify the correctness of the results
-    for (int i = 0; i < N; ++i)
-    {
-        if (arr[i] * 2 != arr_copy[i])
+        /* Parallel computation on the GPU */
+        #pragma acc kernels
         {
-            err = 1;
-            break;
+            for(int i=0; i<N; i++) {
+                h_b[i] = h_a[i];
+            }
         }
     }
+    
+    acc_copyout(h_b, N*sizeof(float));
+    acc_delete(h_a, N*sizeof(float));
 
-    free(arr);
-    free(arr_copy);
+    /* Verify the results */
+    for(int i=0; i<N; i++) {
+        if(h_b[i] != h_a[i]) {
+            printf("Test failed at index %d! Host: %f, Device: %f\n",
+                   i, h_a[i], h_b[i]);
+            return -1;
+        }
+    }  
 
-    return err;
-}
-#endif
+    printf("Copyout and delete test passed!\n");
+    
+    /* Free host memory */
+    free(h_a);
+    free(h_b);
 
-int main()
-{
-    int failcode = 0;
-    int failed;
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x)
-    {
-        failed = failed + test1();
-    }
-    if (failed != 0)
-    {
-        failcode = failcode + (1 << 0);
-    }
-#endif
-    return failcode;
+    return 0;
 }

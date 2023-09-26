@@ -1,31 +1,30 @@
 #include "acc_testsuite.h"
+
 #ifndef T1
-/*T1:kernels construct firstprivate clause,V:2.0-2.7*/
+//T1:kernels construct firstprivate clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int N = 1000;
-    real_t *a = (real_t *)malloc(N * sizeof(real_t));
-    real_t *b = (real_t *)malloc(N * sizeof(real_t));
-    real_t *c = (real_t *)malloc(N * sizeof(real_t));
+    int* a = (int*)malloc(sizeof(int) * 10);
+    int* b = (int*)malloc(sizeof(int) * 10);
+    int* c = (int*)malloc(sizeof(int) * 10);
 
-    for (int x = 0; x < N; ++x) {
-        a[x] = rand() / (real_t)(RAND_MAX / 10);
-        b[x] = rand() / (real_t)(RAND_MAX / 10);
-        c[x] = 0.0;
+    for (int i = 0; i < 10; i++) {
+        a[i] = i;
+        b[i] = i;
+        c[i] = i;
     }
 
-    #pragma acc kernels firstprivate(a, b, N)
+    #pragma acc kernels firstprivate(a, b, c)
     {
-        #pragma acc loop
-        for (int x = 0; x < N; ++x) {
-            c[x] = a[x] + b[x];
+        for (int i = 0; i < 10; i++) {
+            a[i] = b[i] + c[i];
         }
     }
 
-    for (int x = 0; x < N; ++x) {
-        if (fabs(c[x] - (a[x] + b[x])) > PRECISION) {
+    for (int i = 0; i < 10; i++) {
+        if (a[i] != b[i] + c[i]) {
             err = 1;
             break;
         }

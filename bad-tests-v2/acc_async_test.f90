@@ -6,42 +6,14 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
-        INTEGER(ACC_HANDLE_KIND) :: async1, async2
-        REAL(8), DIMENSION(:), ALLOCATABLE :: a, b, c
-        INTEGER :: i
-
-        ALLOCATE(a(10), b(10), c(10))
-        a = 1.0
-        b = 2.0
-        c = 0.0
-
-        !$acc enter data copyin(a, b, c)
-
-        !$acc parallel async(async1)
-        DO i = 1, 10
-          c(i) = a(i) + b(i)
-        END DO
-        !$acc end parallel
-
-        !$acc parallel async(async2)
-        DO i = 1, 10
-          c(i) = c(i) * 2
-        END DO
-        !$acc end parallel
-
-        !$acc wait(async1)
-        !$acc wait(async2)
-
-        !$acc update self(c)
-
-        DO i = 1, 10
-          IF (c(i) .ne. (a(i) + b(i)) * 2) THEN
-            errors = errors + 1
-          END IF
-        END DO
-
-        !$acc exit data delete(a, b, c)
-
+        INTEGER :: wait_arg
+        INTEGER :: dev_num
+        
+        wait_arg = 1
+        dev_num = 1
+        
+        CALL acc_async_test(wait_arg, dev_num)
+        
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
@@ -49,25 +21,3 @@
         END IF
       END
 #endif
-
-      PROGRAM main
-        IMPLICIT NONE
-        INTEGER :: failcode, testrun
-        LOGICAL :: failed
-        INCLUDE "acc_testsuite.Fh"
-#ifndef T1
-        LOGICAL :: test1
-#endif
-        failed = .FALSE.
-        failcode = 0
-#ifndef T1
-        DO testrun = 1, NUM_TEST_CALLS
-          failed = failed .or. test1()
-        END DO
-        IF (failed) THEN
-          failcode = failcode + 2 ** 0
-          failed = .FALSE.
-        END IF
-#endif
-        CALL EXIT (failcode)
-      END PROGRAM

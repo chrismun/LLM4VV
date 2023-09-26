@@ -1,49 +1,41 @@
-#include <iostream>
-#include <cstdlib>
-#include <cassert>
 #include "acc_testsuite.h"
 
 #ifndef T1
-/*T1:data deviceptr clause,V:2.0-2.7*/
+//T1:data deviceptr clause,V:2.7-3.3
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int N = 100;
-    int *host_array = new int[N];
-    int *device_array;
+    // Declare a device pointer
+    int* device_ptr = (int*)acc_malloc(sizeof(int));
 
-    for (int i = 0; i < N; i++) {
-        host_array[i] = rand() % 100;
+    // Initialize the device pointer
+    *device_ptr = 123;
+
+    // Declare a host pointer
+    int* host_ptr = (int*)malloc(sizeof(int));
+
+    // Initialize the host pointer
+    *host_ptr = 456;
+
+    // Use the device pointer to access the data on the device
+    acc_attach(device_ptr);
+    acc_deviceptr(device_ptr);
+    acc_detach(device_ptr);
+
+    // Use the host pointer to access the data on the host
+    acc_attach(host_ptr);
+    acc_deviceptr(host_ptr);
+    acc_detach(host_ptr);
+
+    // Check that the data was correctly accessed
+    if (*device_ptr != 123 || *host_ptr != 456) {
+        err = 1;
     }
 
-    #pragma acc enter data copyin(host_array[0:N])
-    #pragma acc data deviceptr(device_array)
-    {
-        #pragma acc host_data use_device(device_array)
-        {
-            device_array = host_array;
-        }
-
-        #pragma acc parallel present(device_array[0:N])
-        {
-            for (int i = 0; i < N; i++) {
-                device_array[i] *= 2;
-            }
-        }
-
-        #pragma acc update host(host_array[0:N])
-    }
-    #pragma acc exit data delete(device_array)
-
-    for (int i = 0; i < N; i++) {
-        if (host_array[i] != (rand() % 100) * 2) {
-            err = 1;
-            break;
-        }
-    }
-
-    delete[] host_array;
+    // Free the device and host pointers
+    acc_free(device_ptr);
+    free(host_ptr);
 
     return err;
 }

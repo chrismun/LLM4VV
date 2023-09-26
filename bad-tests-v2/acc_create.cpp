@@ -1,40 +1,56 @@
-#include "acc_testsuite.h"
-#ifndef T1
-/*T1:acc create,V:2.0-2.7*/
+c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <acc_testsuite.h>
+
+#define NUM_TEST_CALLS 10
+#define SEED 12345
+
 int test1(){
     int err = 0;
     srand(SEED);
 
-    int *data = (int *)malloc(n * sizeof(int));
-    int *host_data = (int *)malloc(n * sizeof(int));
-    for (int x = 0; x < n; ++x) {
-        data[x] = rand() % n;
-        host_data[x] = data[x];
+    // Test 1: Data section is in shared memory
+    int *data = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data[i] = i;
     }
-
-    int *device_data = (int *)acc_create(data, n * sizeof(int));
-    if (device_data != data) {
+    int *dev_data = (int *)acc_create(data, sizeof(int) * 10);
+    if (dev_data != data) {
         err = 1;
     }
-
-    for (int x = 0; x < n; ++x) {
-        if (device_data[x] != host_data[x]) {
-            err = 1;
-        }
-    }
-
-    acc_delete(device_data, n * sizeof(int));
     free(data);
-    free(host_data);
+
+    // Test 2: Data section is present in the current device memory
+    int *data2 = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data2[i] = i;
+    }
+    int *dev_data2 = (int *)acc_create(data2, sizeof(int) * 10);
+    if (dev_data2 != data2) {
+        err = 1;
+    }
+    free(data2);
+
+    // Test 3: Data section is not present in the current device memory
+    int *data3 = (int *)malloc(sizeof(int) * 10);
+    for (int i = 0; i < 10; i++) {
+        data3[i] = i;
+    }
+    int *dev_data3 = (int *)acc_create(data3, sizeof(int) * 10);
+    if (dev_data3 == data3) {
+        err = 1;
+    }
+    free(data3);
 
     return err;
 }
-#endif
 
 int main(){
     int failcode = 0;
     int failed;
-#ifndef T1
+
     failed = 0;
     for (int x = 0; x < NUM_TEST_CALLS; ++x){
         failed = failed + test1();
@@ -42,6 +58,6 @@ int main(){
     if (failed != 0){
         failcode = failcode + (1 << 0);
     }
-#endif
+
     return failcode;
 }

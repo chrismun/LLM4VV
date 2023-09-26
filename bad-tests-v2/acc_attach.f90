@@ -6,50 +6,32 @@
         INCLUDE "acc_testsuite.Fh"
         
         INTEGER :: errors = 0
+        INTEGER, DIMENSION(10) :: host_array, device_array
+        TYPE(C_PTR) :: host_ptr, device_ptr
 
-        IF (acc_get_device_type() .eq. acc_device_host) THEN
-          ! host-only code
-          TYPE(REAL),DIMENSION(10,10,10) :: f, f_copy 
-          INTEGER :: x, y, z
+        host_array = 1
+        device_array = 0
 
-          CALL RANDOM_NUMBER(f)
-          f_copy = f
+        host_ptr = C_LOC(host_array)
+        device_ptr = C_LOC(device_array)
 
-          !$acc enter data create(f(1:10,1:10,1:9))
+        ! Attach device_array to host_array
+        CALL acc_attach_ptr(host_ptr, device_ptr, 10 * 4)
 
-          CALL acc_attach(f)
-
-          !$acc parallel
-            !$acc loop
-            DO x = 1, 10
-              DO y = 1, 10
-                DO z = 1, 9
-                  f(x, y, z) = f(x, y, z) + 1
-                END DO
-              END DO
-            END DO
-          !$acc end parallel
-
-          CALL acc_detach(f)
-          !$acc exit data copyout(f(1:10,1:10,1:9))
-
-          DO x = 1, 10
-            DO y = 1, 10
-              DO z = 1, 9
-                IF (abs(f(x, y, z) - (1 + f_copy(x, y, z)))) .gt. PRECISION THEN
-                  errors = errors + 1
-                END IF
-              END DO
-            END DO
-          END DO
+        ! Check if device_array is updated
+        IF (ANY(device_array .NE. host_array)) THEN
+          errors = errors + 1
         END IF
+
+        ! Detach device_array from host_array
+        CALL acc_detach_ptr(host_ptr)
 
         IF (errors .eq. 0) THEN
           test1 = .FALSE.
         ELSE
           test1 = .TRUE.
         END IF
-      END
+      END FUNCTION test1
 #endif
 
       PROGRAM main
@@ -72,4 +54,4 @@
         END IF
 #endif
         CALL EXIT (failcode)
-      END PROGRAM
+      END PROGRAM main

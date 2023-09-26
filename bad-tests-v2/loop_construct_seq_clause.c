@@ -1,50 +1,41 @@
-#include "acc_testsuite.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <openacc.h>
 
-#ifndef T1
-// T1:runtime,data,executable-data,construct-independent,V:2.0-2.7
-int test1() {
-    int err = 0;
-    int a[10];
-    int b[10];
+#define ARRAY_SIZE 10000
 
-    srand(SEED);
+int test_seq_clause() {
+    int i, err = 0;
+    float* array = (float*) malloc(ARRAY_SIZE * sizeof(float));
 
-    for (int i = 0; i < 10; i++) {
-        a[i] = rand() % 10;
-        b[i] = 0;
-    }
-
-    #pragma acc enter data copyin(a[0:10]) create(b[0:10])
+    for(i = 0; i < ARRAY_SIZE; i++)
+        array[i] = (float)i;
+    
+    float sum = 0.0;
+    
     #pragma acc parallel loop seq
-    for (int i = 0; i < 10; i++) {
-        b[i] = a[i] * a[i];
-    }
-    #pragma acc exit data delete(a, b)
+    for(i = 0; i < ARRAY_SIZE; i++)
+        sum += array[i];
+    
+    // Check the result
+    float expected_sum = ((float)ARRAY_SIZE-1)*(float)ARRAY_SIZE/2;  // Sum of arithmetic series
+    if (sum != expected_sum)
+        err = 1;
 
-    for (int i = 0; i < 10; i++) {
-        if (b[i] != a[i] * a[i]) {
-            err = 1;
-            break;
-        }
-    }
-
+    free(array);
     return err;
 }
-#endif
 
-int main() {
+int main(){
     int failcode = 0;
-    int failed;
 
-#ifndef T1
-    failed = 0;
-    for (int x = 0; x < NUM_TEST_CALLS; ++x) {
-        failed = failed + test1();
+    failcode = test_seq_clause();
+
+    if(failcode != 0){
+        printf("Test failed.\n");
+    } else {
+        printf("Test passed.\n");
     }
-    if (failed != 0) {
-        failcode = failcode + (1 << 0);
-    }
-#endif
 
     return failcode;
 }

@@ -14,6 +14,9 @@ failed_tests_folder = "vvllm/bad-tests-v2"
 # Create the failed tests folder if it doesn't exist
 os.makedirs(failed_tests_folder, exist_ok=True)
 
+# Counter for the number of tests copied
+tests_copied = 0
+
 # Iterate over the result files
 for result_file in os.listdir(results_directory):
     if result_file.endswith(".json"):
@@ -42,9 +45,18 @@ for result_file in os.listdir(results_directory):
 
                     # Copy the test file to the failed tests folder
                     file_path = os.path.join(tests_directory, test_subdirectory, test_file)
+                    dest_path = os.path.join(failed_tests_folder, test_file)
+
                     if os.path.isfile(file_path):
-                        print(f"Copying {file_path} to {failed_tests_folder}")
-                        shutil.copy(file_path, failed_tests_folder)
+                        version = 1
+                        while os.path.exists(dest_path):
+                            base, ext = os.path.splitext(test_file)
+                            dest_path = os.path.join(failed_tests_folder, f"{base}_v{version}{ext}")
+                            version += 1
+
+                        print(f"Copying {file_path} to {dest_path}")
+                        shutil.copy(file_path, dest_path)
+                        tests_copied += 1
                     else:
                         print(f"File {file_path} does not exist")
                 else:
@@ -52,4 +64,4 @@ for result_file in os.listdir(results_directory):
             else:
                 print(f"'execution' key not found in test data for {test_name}")
 
-print("Finished copying files")
+print(f"Finished copying files. Total tests copied: {tests_copied}")
