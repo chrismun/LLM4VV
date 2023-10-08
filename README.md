@@ -15,15 +15,9 @@ The raw numbers for the results of running generated testsuites against an OpenA
 Distributed under the BSD 3-Clause License. See `LICENSE.txt` for more information.
 
 
-
 <!-- CONTACT -->
 ## Contact
 
 Christian Munley - chrismun@udel.edu 
 
 Sunita Chandrasekaran - schandra@udel.edu
-
-CRPL - [https://crpl.cis.udel.edu/](https://crpl.cis.udel.edu/)
-
-Website Link: [https://crpl.cis.udel.edu/oaccvv/results/](https://crpl.cis.udel.edu/oaccvv/results/)
-
