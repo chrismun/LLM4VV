@@ -1,4 +1,4 @@
-# vvllm
+# LLM4VV
 
 OpenACC V&V Testsuites generated with LLMs, using:
 - code template
