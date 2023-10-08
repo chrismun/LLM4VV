@@ -12,7 +12,7 @@ The raw numbers for the results of running generated testsuites against an OpenA
 <!-- LICENSE -->
 ## License
 
-Distributed under the BSD 3-Clause License. See `LICENSE.txt` for more information.
+Distributed under the BSD 3-Clause License. See `LICENSE` for more information.
 
 
 <!-- CONTACT -->
