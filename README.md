@@ -14,8 +14,6 @@ The raw numbers for the results of running generated testsuites against an OpenA
 
 Distributed under the BSD 3-Clause License. See `LICENSE.txt` for more information.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- CONTACT -->
@@ -29,5 +27,3 @@ CRPL - [https://crpl.cis.udel.edu/](https://crpl.cis.udel.edu/)
 
 Website Link: [https://crpl.cis.udel.edu/oaccvv/results/](https://crpl.cis.udel.edu/oaccvv/results/)
 
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
