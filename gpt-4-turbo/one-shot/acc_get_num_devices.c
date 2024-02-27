@@ -1,0 +1,1 @@
+gcc -fopenacc -o test_acc_get_num_devices test_acc_get_num_devices.c -fopt-info-optimized-omp

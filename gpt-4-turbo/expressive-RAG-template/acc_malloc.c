@@ -1,0 +1,1 @@
+pgcc -acc -Minfo=accel -o acc_malloc_test acc_malloc_test.c

@@ -1,0 +1,1 @@
+pgcc -acc -ta=tesla:cc60 -Minfo=accel -o memcpy_test my_memcpy_test.c

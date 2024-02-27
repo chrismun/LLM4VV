@@ -1,0 +1,1 @@
+pgcc -acc -Minfo=accel test.c -o test_acc

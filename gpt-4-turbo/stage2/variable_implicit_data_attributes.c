@@ -1,0 +1,1 @@
+pgcc -acc -Minfo=accel your_file_name.c -o test_implicit_attr

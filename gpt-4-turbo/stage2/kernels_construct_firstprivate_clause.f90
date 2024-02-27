@@ -1,0 +1,58 @@
+!T1:kernels construct firstprivate clause,V:2.7-2.3
+      MODULE test_module
+        IMPLICIT NONE
+        INCLUDE "acc_testsuite.Fh"
+      CONTAINS
+        LOGICAL FUNCTION test1()
+          USE OPENACC
+          IMPLICIT NONE
+          INTEGER :: errors = 0
+          INTEGER :: a, b
+          INTEGER, DIMENSION(10) :: array
+          a = 5
+          b = 0
+
+          ! initializing array
+          array = 0
+
+          ! Applying the kernels construct with firstprivate clause
+          !$acc kernels firstprivate(a)
+          array(1) = a
+          a = 10
+          !$acc end kernels
+
+          IF (a .NE. 10) THEN
+            errors = errors + 1
+          END IF
+
+          IF (array(1) .NE. 5) THEN
+            errors = errors + 1
+          END IF
+
+          IF (errors .eq. 0) THEN
+            test1 = .FALSE.
+          ELSE
+            test1 = .TRUE.
+          END IF
+        END FUNCTION test1
+      END MODULE test_module
+
+      PROGRAM main
+        USE test_module
+        IMPLICIT NONE
+        INTEGER :: failcode, testrun
+        LOGICAL :: failed
+        INCLUDE "acc_testsuite.Fh"
+        LOGICAL :: test1
+        failed = .FALSE.
+        failcode = 0
+
+        DO testrun = 1, NUM_TEST_CALLS
+          failed = failed .or. test1()
+        END DO
+        IF (failed) THEN
+          failcode = failcode + 2 ** 0
+          failed = .FALSE.
+        END IF
+        CALL EXIT(failcode)
+      END PROGRAM main

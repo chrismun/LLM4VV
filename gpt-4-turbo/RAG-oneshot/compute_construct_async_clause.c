@@ -1,0 +1,1 @@
+pgcc -acc -ta=tesla:managed -Minfo=accel your_program_name.c -o your_program_executable

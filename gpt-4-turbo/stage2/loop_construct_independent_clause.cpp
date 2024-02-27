@@ -1,0 +1,1 @@
+g++ -fopenacc -o test_independent test_independent.cpp -lgomp

@@ -1,0 +1,1 @@
+pgc++ -acc -ta=tesla:cc35 your_program.cpp -o your_program

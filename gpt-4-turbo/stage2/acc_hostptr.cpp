@@ -1,0 +1,1 @@
+g++ -fopenacc -std=c++11 test_acc_hostptr.cpp -o test_acc_hostptr

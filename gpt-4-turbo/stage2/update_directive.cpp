@@ -1,0 +1,1 @@
+pgc++ -acc -Minfo=acc your_test_file.cpp -o test_openacc

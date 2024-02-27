@@ -1,0 +1,1 @@
+pgcc -acc -Minfo=accel -o test_acc_copyout test_acc_copyout.c

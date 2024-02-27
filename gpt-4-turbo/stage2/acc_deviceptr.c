@@ -1,0 +1,1 @@
+pgcc -o acc_test -acc -Minfo=acc your_program_name.c

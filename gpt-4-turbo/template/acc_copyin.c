@@ -1,0 +1,1 @@
+pgcc -acc -o openacc_test ./your_test_file.c

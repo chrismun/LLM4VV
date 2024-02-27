@@ -1,0 +1,1 @@
+gcc -fopenacc -o test_acc_set_device test_acc_set_device.c -laccapi -lOpenACC

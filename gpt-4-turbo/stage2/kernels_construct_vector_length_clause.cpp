@@ -1,0 +1,1 @@
+pgc++ -acc -std=c++11 -o test_vector_length test_vector_length.cpp

@@ -1,0 +1,1 @@
+pgcc -acc -std=c11 -o acc_test your_test_file.c
