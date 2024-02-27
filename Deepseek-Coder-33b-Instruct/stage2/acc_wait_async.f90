@@ -1,4 +1,3 @@
-#ifndef T1
 !T1:acc wait async,V:2.7-2.3
       LOGICAL FUNCTION test1()
         USE OPENACC
@@ -58,4 +57,3 @@
           test1 = .TRUE.
         END IF
       END
-#endif

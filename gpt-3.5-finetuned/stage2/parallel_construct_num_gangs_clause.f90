@@ -1,0 +1,75 @@
+!T1:parallel construct num_gangs clause,V:2.7-2.3
+      LOGICAL FUNCTION test1()
+        USE OPENACC
+        IMPLICIT NONE
+        INCLUDE "acc_testsuite.Fh"
+        
+        INTEGER :: errors = 0, x
+        
+        REAL(8),DIMENSION(100,16,100):: a, b, c
+        REAL(8),DIMENSION(4):: avg
+
+        SEEDDIM(1) = 1
+        SEEDDIM(1) = SEED
+        CALL RANDOM_SEED(PUT=SEEDDIM)
+
+        CALL RANDOM_NUMBER(a)
+        CALL RANDOM_NUMBER(b)
+        c = 0
+        !$acc data copyin(a, b) copyout(c)
+          !$acc parallel num_gangs(4)
+            !$acc loop gang
+            DO x = 1, 4
+              !$acc loop worker
+              DO 100
+                c(x, *, *) = c(x, *, *) + a(:, x, *) * b(:, *, x)
+              END DO
+            END DO
+          !$acc end parallel
+        !$acc end data
+
+        DO x = 1, 4
+          avg(x) = 0
+        END DO
+
+        !$acc data copy(c)
+          !$acc parallel loop num_gangs(4) reduction(+:avg)
+          DO x = 1, 4
+            !$acc loop worker
+            DO 100
+              avg(x) = avg(x) + c(x, *, *)
+            END DO
+          END DO
+          !$end acc parallel loop
+        !$end acc data
+
+        DO x = 1, 4
+          IF (abs(avg(x) - 100) .gt. 1) THEN
+            errors = errors + 1
+          END IF
+        END DO
+
+        IF (errors .eq. 0) THEN
+          test1 = .FALSE.
+        ELSE
+          test1 = .TRUE.
+        END IF
+      END
+
+      PROGRAM main
+        IMPLICIT NONE
+        INTEGER :: failcode, testrun
+        LOGICAL :: failed
+        INCLUDE "acc_testsuite.Fh"
+        LOGICAL :: test1
+        failed = .FALSE.
+        failcode = 0
+        DO testrun = 1, NUM_TEST_CALLS
+          failed = failed .or. test1()
+        END DO
+        IF (failed) THEN
+          failcode = failcode + 2 ** 0
+          failed = .FALSE.
+        END IF
+        CALL EXIT (failcode)
+      END PROGRAM
